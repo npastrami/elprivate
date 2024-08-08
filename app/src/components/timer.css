@@ -1,0 +1,30 @@
+.timer{
+    width:200px;
+    align-content: center;
+    background-color: skyblue;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 1rem 1rem -0.7rem rgb(0,0,0,0.4);
+    position: relative;
+    margin: 0 auto;
+    margin-bottom: -120px;
+    padding: 10px;
+}
+
+
+.timer_container{
+    background-color: #fff;
+    width: 20vw;
+    padding-left: center;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    box-shadow: 0 1rem 1rem -0.7rem rgb(0,0,0,0.4);
+    position: relative;
+    
+}
