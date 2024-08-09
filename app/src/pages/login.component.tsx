@@ -4,8 +4,11 @@ import AuthService from "../services/auth.service";
 import { Stack, Input, Label, Text, YStack, Image, TamaguiProvider } from 'tamagui';
 import { CustomButton } from "../components/CustomButton";
 import tamaguiConfig from '../tamagui.config';
+import IUser from '../types/user.type';
 
-type Props = {};
+type Props = {
+  onLogin: (user: IUser) => void;
+};
 
 type State = {
   redirect: string | null,
@@ -87,11 +90,12 @@ export default class Login extends Component<Props, State> {
     });
 
     AuthService.login(username, password).then(
-      () => {
+      (user: IUser) => {
         this.setState({
           redirect: "/profile",
           successful: true,
         });
+        this.props.onLogin(user);
       },
       error => {
         const resMessage =

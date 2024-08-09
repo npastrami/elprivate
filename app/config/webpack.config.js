@@ -138,6 +138,15 @@ module.exports = {
       ? info => path.relative(paths.appSrc, info.absoluteResourcePath).replace(/\\/g, '/')
       : isEnvDevelopment && (info => path.resolve(info.absoluteResourcePath).replace(/\\/g, '/')),
   },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    historyApiFallback: true, // Update this line
+    port: 8081,
+    hot: true,
+
+  },
   optimization: {
     minimize: isEnvProduction,
     minimizer: [
@@ -407,13 +416,13 @@ module.exports = {
           },
         },
         context: paths.appPath,
-        diagnosticOptions: { syntactic: true },
+        diagnosticOptions: { syntactic: true, semantic: true },
         mode: 'write-references',
       },
       issue: {
         include: [
           { file: '../**/src/**/*.{ts,tsx}' },
-          { file: '**/src/**/*.{ts,tsx}' },
+          // { file: '**/src/**/*.{ts,tsx}' },
         ],
         exclude: [
           { file: '**/src/**/__tests__/**' },

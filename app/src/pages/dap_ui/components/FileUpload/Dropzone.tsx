@@ -14,7 +14,7 @@ interface DropzoneProps {
 const Dropzone: React.FC<DropzoneProps> = ({ onFilesAdded, formType, children }) => { 
   const onDrop = useCallback((acceptedFiles: File[]) => {
        onFilesAdded(acceptedFiles, formType);
-  }, [onFilesAdded]);
+  }, [onFilesAdded, formType]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 

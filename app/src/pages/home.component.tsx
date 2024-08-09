@@ -1,13 +1,13 @@
-import React, { Component, createRef } from "react";
+import React, { Component } from "react";
 import UserService from "../services/user.service";
-import Wheel, { WheelHandle } from "../components/wheel.component";
-import Timer from '../components/timer';
+// import Wheel, { WheelHandle } from "../components/wheel.component";
+// import Timer from '../components/timer';
 import { Stack, Text } from 'tamagui';
 
 // Define an interface for the component's state
 interface HomeState {
   content: string;
-  timerKey: number; // Include the timerKey in the state interface
+  // timerKey: number; // Include the timerKey in the state interface
 }
 
 export default class Home extends Component<{}, HomeState> {
@@ -16,7 +16,7 @@ export default class Home extends Component<{}, HomeState> {
 
     this.state = {
       content: "",
-      timerKey: 0 // Initialize the timerKey in the state
+      // timerKey: 0 
     };
   }
   componentDidMount(): void {
@@ -37,28 +37,28 @@ export default class Home extends Component<{}, HomeState> {
     );
   }
 
-  wheelRef = createRef<WheelHandle>();
+  // wheelRef = createRef<WheelHandle>();
 
-  handleTimerEnd = () => {
-    console.log('Timer ended. Handling in Home.');
-    if (this.wheelRef.current) {
-      this.wheelRef.current.handleTimerEnd();
-    }
-  };
+  // handleTimerEnd = () => {
+  //   console.log('Timer ended. Handling in Home.');
+  //   if (this.wheelRef.current) {
+  //     this.wheelRef.current.handleTimerEnd();
+  //   }
+  // };
 
-  handleCycleComplete = () => {
-    console.log('Timer restarted. Synced with backend.');
-    if (this.wheelRef.current) {
-      this.wheelRef.current.handleTimerEnd();
-    }
-    // This function will be called when the Wheel's cycle is complete
-    this.setState(prevState => ({
-      timerKey: prevState.timerKey + 1
-    }));
-  };
+  // handleCycleComplete = () => {
+  //   console.log('Timer restarted. Synced with backend.');
+  //   if (this.wheelRef.current) {
+  //     this.wheelRef.current.handleTimerEnd();
+  //   }
+  //   // This function will be called when the Wheel's cycle is complete
+  //   this.setState(prevState => ({
+  //     timerKey: prevState.timerKey + 1
+  //   }));
+  // };
 
   render() {
-    const { timerKey, content } = this.state;
+    const { content } = this.state;
     return (
       <Stack space>
         <Stack>
@@ -66,8 +66,7 @@ export default class Home extends Component<{}, HomeState> {
           <Text>{content}</Text>
         </Stack>
         <Stack alignItems="center">
-          <Timer key={timerKey} onTimerEnd={this.handleTimerEnd} />
-          <Wheel ref={this.wheelRef} onCycleComplete={this.handleCycleComplete} />
+          {/* <Timer key={timerKey} onTimerEnd={this.handleTimerEnd} /> */}
         </Stack>
       </Stack>
     );
