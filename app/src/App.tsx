@@ -27,6 +27,7 @@ class App extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.logOut = this.logOut.bind(this);
+    this.handleLogin = this.handleLogin.bind(this);
 
     this.state = {
       showModeratorBoard: false,
@@ -35,20 +36,34 @@ class App extends Component<Props, State> {
     };
   }
 
+  handleLogin(user: IUser) {
+    this.setState({
+      currentUser: user,
+      showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
+      showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
+    });
+  }
+  
   componentDidMount() {
     const user = AuthService.getCurrentUser();
-
+  
     if (user) {
       this.setState({
-        currentUser: AuthService.getCurrentUser(),
-        showModeratorBoard: user.roles.includes("ROLE_MODERATOR"),
-        showAdminBoard: user.roles.includes("ROLE_ADMIN"),
+        currentUser: user,
+        showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
+        showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
       });
     }
   }
 
   logOut() {
     AuthService.logout();
+    this.setState({
+      currentUser: undefined,
+      showModeratorBoard: false,
+      showAdminBoard: false,
+    });
+    window.location.href = '/login';
   }
 
   render() {
@@ -60,7 +75,7 @@ class App extends Component<Props, State> {
           <YStack backgroundColor="$darkGrey" padding="$3" height={80} justifyContent="center">
             <XStack justifyContent="space-between" alignItems="center">
               <Link to="/" style={{ textDecoration: 'none' }}>
-                <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" fontWeight="bold" >HeatSeeker Picks</Button>
+                <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" fontWeight="bold" >Enrique Customs</Button>
               </Link>
               <XStack space="$3">
                 <Link to="/home" style={{ textDecoration: 'none' }}>
@@ -111,7 +126,7 @@ class App extends Component<Props, State> {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login onLogin={this.handleLogin}/>} />
               <Route path="/signup" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/user" element={<BoardUser />} />
