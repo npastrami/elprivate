@@ -17,7 +17,7 @@ def handle_duplicates():
     conn = None
     try:
         conn = psycopg2.connect(
-            dbname="postgres",
+            dbname="dapdatabase",
             user="postgres",
             password="kr3310",
             host="localhost",

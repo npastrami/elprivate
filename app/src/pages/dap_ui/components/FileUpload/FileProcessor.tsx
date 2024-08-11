@@ -42,7 +42,7 @@ export class FileProcessor {
     });
 
     try {
-      const response = await fetch("/api/process_doc", {
+      const response = await fetch("http://127.0.0.1:8080/api/process_doc", {
         method: "POST",
         body: formData,
       });

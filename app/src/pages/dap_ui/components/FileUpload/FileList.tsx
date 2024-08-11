@@ -56,7 +56,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
   
   const handleDownload = async (documentName: string, clientID: string) => {
     console.log("Download button clicked");
-    const response = await fetch(`/api/download_csv/${documentName}`, {
+    const response = await fetch(`http://127.0.0.1:8080/api/download_csv/${documentName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -73,7 +73,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
 
   const handleDownloadAll = async (clientID: string) => {
     const documentNames = localFiles.map(file => file.path);
-    const response = await fetch('/api/download_all_documents', {
+    const response = await fetch('http://127.0.0.1:8080/api/download_all_documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -177,7 +177,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
                     }}
                   >
                     {formTypes.map((formType) => (
-                      <MenuItem value={formType}>{formType}</MenuItem>
+                      <MenuItem key={formType} value={formType}>{formType}</MenuItem>
                     ))}
                   </Select>
                 </Grid>

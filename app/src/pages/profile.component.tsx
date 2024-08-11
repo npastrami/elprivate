@@ -145,11 +145,10 @@ export default class Profile extends Component<Props, State> {
                     <FileUpload />
                   </Card>
                 </YStack>
+                <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+                  <ClientDataTable />
+                </Card>
               </JobProvider>
-
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
-                <ClientDataTable />
-              </Card>
             </YStack>
           </Card>
         ) : null}
