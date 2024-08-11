@@ -15,10 +15,14 @@ export const handleSortFiles = async (files: FileWithID[]) => {
     formData.append("files[]", file.file);
   });
 
-  const response = await fetch('/api/sort', {
+  console.log("Making POST request to /api/sort");
+
+  const response = await fetch('http://127.0.0.1:8080/api/sort', {
     method: 'POST',
     body: formData,
   });
+
+  console.log(response)
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

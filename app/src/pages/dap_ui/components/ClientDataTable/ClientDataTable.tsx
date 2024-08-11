@@ -31,8 +31,9 @@ const ClientDataTable: React.FC = () => {
     // Extract the data fetching logic into a separate function
     const fetchData = async () => {
       if (!clientID) return;
+      console.log("Client ID in ClientDataTable:", clientID);
       try {
-        const response = await axios.post("/api/get_client_data", { clientID: clientID });
+        const response = await axios.post("http://127.0.0.1:8080/api/get_client_data", { clientID: clientID });
         const data = JSON.parse(response.data.data);
         setClientDocs(data.client_docs);
       } catch (error) {

@@ -4,7 +4,7 @@ import json
 class TableBuilder:
     async def __aenter__(self):
         self.conn = await asyncpg.connect(
-            database="postgres",
+            database="dapdatabase",
             user="postgres",
             password="newpassword",
             host="localhost",

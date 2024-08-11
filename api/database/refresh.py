@@ -21,7 +21,7 @@ def refresh():
     conn = None
     try:
         conn = psycopg2.connect(
-            dbname="postgres",
+            dbname="dapdatabase",
             user="postgres",
             password="newpassword",
             host="localhost",

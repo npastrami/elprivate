@@ -30,7 +30,7 @@ from accounts.controllers.user_controller import user_controller
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
-app = cors(app, allow_origin="http://localhost:8081")
+app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 app.register_blueprint(auth_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(user_controller, url_prefix='/api', allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
@@ -57,7 +57,7 @@ async def initial():
     await Role.create(id=3, name="admin")
 
 
-@app.route('/process_doc', methods=['POST'])
+@app.route('/api/process_doc', methods=['POST'])
 async def process_doc():
     form = await request.form
     client_id = form['clientID']
@@ -122,7 +122,7 @@ def sanitize_blob_name(blob_name):
     sanitized = sanitized.replace(' ', '_')
     return sanitized
 
-@app.route('/download_csv/<document_id>', methods=['GET', 'POST'])
+@app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])
 async def download_csv(document_id):
     print("Entered download_csv function")
     json_data = await request.json
@@ -139,7 +139,7 @@ async def download_csv(document_id):
     
     return response
 
-@app.route('/get_client_data', methods=['POST'])
+@app.route('/api/get_client_data', methods=['POST'])
 async def get_client_data():
     json_data = await request.json
     client_id = json_data['clientID']
@@ -161,8 +161,9 @@ async def process_sort(file):
 
     return {**result, 'file_name': filename}
 
-@app.route('/sort', methods=['POST'])
+@app.route('/api/sort', methods=['POST'])
 async def sort():
+    print("files received")
     files = await request.files
     files_to_sort = files.getlist('files[]')
 
@@ -172,7 +173,7 @@ async def sort():
     print(f'sorted_files: {sorted_files}')
     return {'sorted_files': sorted_files}
 
-@app.route('/download_all_documents', methods=['POST', 'GET'])
+@app.route('/api/download_all_documents', methods=['POST', 'GET'])
 async def download_all_documents():
         data = await request.json
         client_id = data['clientID']
