@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
 import { JobContext } from '../JobInput/JobContext';
@@ -12,17 +12,17 @@ interface ClientDoc {
   access_id: string;
 }
 
-interface ExtractedField {
-  id: number;
-  client_id: string;
-  doc_name: string;
-  doc_status: string;
-  doc_type: string;
-  field_name: string;
-  field_value: string;
-  confidence: number;
-  access_id: string;
-}
+// interface ExtractedField {
+//   id: number;
+//   client_id: string;
+//   doc_name: string;
+//   doc_status: string;
+//   doc_type: string;
+//   field_name: string;
+//   field_value: string;
+//   confidence: number;
+//   access_id: string;
+// }
 
 const ClientDataTable: React.FC = () => {
     const { clientID } = useContext(JobContext) as { clientID: string };
