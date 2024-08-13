@@ -17,8 +17,12 @@ from database.ui_table_builder import TableBuilder
 import xml.etree.ElementTree as ET
 import re
 import asyncio
+import aiohttp
+from pdf2image import convert_from_path
 import openpyxl
+import traceback
 import io
+import tempfile
 from tortoise import Tortoise, run_async
 from tortoise.transactions import in_transaction
 from accounts.models.index import TORTOISE_ORM
@@ -122,6 +126,60 @@ def sanitize_blob_name(blob_name):
     sanitized = sanitized.replace(' ', '_')
     return sanitized
 
+@app.route('/api/get_documents_for_review', methods=['POST'])
+async def get_documents_for_review():
+    data = await request.json
+    client_id = data.get('client_id', None)
+    
+    db = DapDatabase(client_id, None)
+    documents = await db.get_documents_for_review(client_id)
+    await db.close()
+    
+    return jsonify({"documents": documents})
+
+@app.route('/api/get_document_image', methods=['POST'])
+async def get_document_image():
+    data = await request.get_json()
+    doc_name = data.get('doc_name')
+    client_id = data.get('client_id', None)
+    
+    db = DapDatabase(client_id, None)
+    doc_url = await db.get_document_image(doc_name)
+
+    if not doc_url:
+        return jsonify({"error": "Document not found"}), 404
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(doc_url) as resp:
+                print(f"Status: {resp.status}")
+                if resp.status == 200:
+                    pdf_content = await resp.read()
+
+                    # Write the PDF content to a temporary file
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
+                        temp_pdf.write(pdf_content)
+                        temp_pdf_path = temp_pdf.name
+
+                    # Convert the PDF to images (PNG)
+                    images = convert_from_path(temp_pdf_path)
+
+                    # Save the first page as a PNG file in a temporary directory
+                    temp_png_path = tempfile.mktemp(suffix=".png")
+                    images[0].save(temp_png_path, 'PNG')
+
+                    # Return the PNG file as a response
+                    return await send_file(temp_png_path, mimetype='image/png')
+
+                else:
+                    return jsonify({"error": "Failed to download document"}), 500
+
+    except Exception as e:
+        # Log the exception
+        print(f"Error while processing the document: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error"}), 500
+
 @app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])
 async def download_csv(document_id):
     print("Entered download_csv function")
@@ -172,6 +230,14 @@ async def sort():
     
     print(f'sorted_files: {sorted_files}')
     return {'sorted_files': sorted_files}
+
+@app.route('/api/approve_document', methods=['POST'])
+async def approve_document():
+    data = await request.get_json()
+    db = DapDatabase(None, None)
+    doc_name = data.get('doc_name')
+    await db.approve_document(doc_name)
+    return jsonify({"status": "success"})
 
 @app.route('/api/download_all_documents', methods=['POST', 'GET'])
 async def download_all_documents():

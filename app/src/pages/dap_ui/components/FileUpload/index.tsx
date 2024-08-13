@@ -12,7 +12,7 @@ export enum FileStatus {
   Extracting = 'Extracting...',
   Sorting = 'Sorting...',
   UploadCompleted = 'Upload Completed',
-  ExtractCompleted = 'Extract Completed',
+  ExtractCompleted = 'Awaiting Review',
   Error = 'Error',
   EmptyExtraction = 'Empty Extraction'
 }
