@@ -105,20 +105,21 @@ class DapDatabase:
         await self.ensure_connected()
         if client_id:
             query = """
-            SELECT * FROM client_docs 
-            WHERE doc_status = 'extracted' AND client_id = $1 
-            ORDER BY id ASC;
+            SELECT DISTINCT ON (doc_url, field_name) * FROM extracted_fields 
+            WHERE doc_status = 'extracted' AND client_id = $1 AND field_value IS NOT NULL
+            ORDER BY doc_url, field_name, id ASC;
             """
             rows = await self.conn.fetch(query, str(client_id))  # Ensure client_id is a string
         else:
             query = """
-            SELECT * FROM client_docs 
-            WHERE doc_status = 'extracted' 
-            ORDER BY id ASC;
+            SELECT DISTINCT ON (doc_url, field_name) * FROM extracted_fields 
+            WHERE doc_status = 'extracted' AND field_value IS NOT NULL
+            ORDER BY doc_url, field_name, id ASC;
             """
             rows = await self.conn.fetch(query)
         
         return [dict(row) for row in rows]
+
 
     async def get_document_image(self, doc_name):
         await self.ensure_connected()
