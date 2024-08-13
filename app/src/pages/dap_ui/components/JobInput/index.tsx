@@ -28,22 +28,50 @@ export const JobInput = () => {
   }, [setClientID]);
 
   return (
-    <>
+    <div style={{ display: 'flex', gap: '1px', height: '40px' }}>
       <TextField
         label="Client ID"
         value={clientID}
         onChange={e => setClientID(e.target.value)}
-        sx={{ backgroundColor: '#e0e0e0' }}
+        sx={{
+          backgroundColor: '#e0e0e0',
+          width: '150px',
+          '& .MuiInputBase-root': {
+            height: '100%',  // Make input fill the height of the div
+          },
+          '& .MuiInputBase-input': {
+            padding: '0 14px',  // Vertically center the text
+            boxSizing: 'border-box',
+          },
+          '& .MuiFormLabel-root': {  // Adjust the label position for smaller height
+            top: '-10px',
+            // fontSize: '0.75rem',
+          },
+        }}
         InputLabelProps={{ sx: { color: "#373737" } }}
         disabled={clientID !== '' && AuthService.getCurrentUser().roles.includes("ROLE_USER")}
       />
       <TextField
-        label="Axcess Version #"
+        label="Year"
         value={versionID}
         onChange={e => setVersionID(e.target.value)}
-        sx={{ backgroundColor: '#e0e0e0' }}
+        sx={{
+          backgroundColor: '#e0e0e0',
+          width: '150px',
+          '& .MuiInputBase-root': {
+            height: '100%',  // Make input fill the height of the div
+          },
+          '& .MuiInputBase-input': {
+            padding: '0 14px',  // Vertically center the text
+            boxSizing: 'border-box',
+          },
+          '& .MuiFormLabel-root': {  // Adjust the label position for smaller height
+            top: '-10px',
+            // fontSize: '0.75rem',
+          },
+        }}
         InputLabelProps={{ sx: { color: "#373737" } }}
       />
-    </>
+    </div>
   );
 };

@@ -7,6 +7,8 @@ import { FileUpload } from './dap_ui/components/FileUpload/index';
 import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
+import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
+
 
 type Props = {};
 
@@ -141,6 +143,12 @@ export default class Profile extends Component<Props, State> {
                   <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
                     <JobInput />
                   </Card>
+                  {currentUser.roles && currentUser.roles.includes('ROLE_ADMIN') && (
+                    <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+                      <h3>Review Workpapers</h3>
+                      <ReviewWorkpapers clientId={currentUser.id} />
+                    </Card>
+                  )}
                   <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
                     <FileUpload />
                   </Card>

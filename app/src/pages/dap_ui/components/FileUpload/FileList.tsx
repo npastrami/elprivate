@@ -22,7 +22,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
 
   useEffect(() => {
     // Check if all files have status 'Extract Completed'
-    const allFilesExtracted = localFiles.every(file => file.status === 'Extract Completed');
+    const allFilesExtracted = localFiles.every(file => file.status === 'Awaiting Review');
     setAllExtracted(allFilesExtracted);
   }, [localFiles]);
 
@@ -188,7 +188,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
                   </IconButton>
                 </Grid>
                 <Grid item xs={0.85}>
-                  {file.status === 'Extract Completed' && (
+                  {file.status === 'Awaiting Review' && (
                     <IconButton style={{ color: '#ABABAB' }} onClick={() => handleDownload(file.file.name, clientID)}>
                       <GetAppIcon />
                     </IconButton>

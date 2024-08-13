@@ -3,7 +3,7 @@ import axios from "axios";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
 import { JobContext } from '../JobInput/JobContext';
 
-interface ClientDoc {
+export interface ClientDoc {
   id: number;
   client_id: string;
   doc_name: string;

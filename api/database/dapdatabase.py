@@ -2,12 +2,21 @@ import asyncpg
 import os
 import csv
 from io import StringIO
+from azure.storage.blob.aio import BlobServiceClient
+from azure.storage.blob import generate_blob_sas, BlobSasPermissions
+import datetime
+import dap.credentials as credentials
+import base64
 
 class DapDatabase:
     def __init__(self, client_id, doc_url):
         self.client_id = client_id
         self.doc_url = doc_url
         self.conn = None
+        
+        # Initialize the BlobServiceClient and BlobContainerClient
+        self.blob_service_client = BlobServiceClient.from_connection_string(credentials.CONNECTION_STRING)
+        self.blob_container_client = self.blob_service_client.get_container_client("extract-custinv")
         
     async def ensure_connected(self):
         if self.conn is None:
@@ -91,6 +100,58 @@ class DapDatabase:
         """
         rows = await self.conn.fetch(query, client_id, doc_type)
         return rows
+    
+    async def get_documents_for_review(self, client_id=None):
+        await self.ensure_connected()
+        if client_id:
+            query = """
+            SELECT * FROM client_docs 
+            WHERE doc_status = 'extracted' AND client_id = $1 
+            ORDER BY id ASC;
+            """
+            rows = await self.conn.fetch(query, str(client_id))  # Ensure client_id is a string
+        else:
+            query = """
+            SELECT * FROM client_docs 
+            WHERE doc_status = 'extracted' 
+            ORDER BY id ASC;
+            """
+            rows = await self.conn.fetch(query)
+        
+        return [dict(row) for row in rows]
+
+    async def get_document_image(self, doc_name):
+        await self.ensure_connected()
+        query = """
+        SELECT doc_url FROM client_docs WHERE doc_name = $1;
+        """
+        doc_url = await self.conn.fetchval(query, doc_name)
+
+        if doc_url:
+            blob_location = doc_url.split(self.blob_container_client.url)[-1].lstrip('/')
+            
+            sas_token = generate_blob_sas(
+                account_name=self.blob_service_client.account_name,
+                container_name=self.blob_container_client.container_name,
+                blob_name=blob_location,
+                account_key=credentials.KEY,
+                permission=BlobSasPermissions(read=True),
+                expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            )
+
+            doc_url = f"{doc_url}?{sas_token}"
+            print(doc_url)
+
+        return doc_url
+    
+    async def approve_document(self, doc_name):
+        await self.ensure_connected()
+        query = """
+        UPDATE client_docs 
+        SET doc_status = 'reviewed' 
+        WHERE doc_name = $1;
+        """
+        await self.conn.execute(query, doc_name)
     
     async def generate_csv(self, document_id, client_id):
         await self.ensure_connected()
