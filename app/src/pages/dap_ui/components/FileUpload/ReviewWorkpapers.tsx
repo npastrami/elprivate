@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, TableBody, TextField, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Button, Table, TableBody, TextField, TableCell, TableContainer, TableHead, TableRow, Paper, Switch, FormControlLabel, IconButton } from '@mui/material';
 import { ClientDoc } from '../ClientDataTable/ClientDataTable';
+import { v4 as uuidv4 } from 'uuid';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 interface ReviewWorkpapersProps {
   clientId: string;
 }
 
 interface Workpaper extends ClientDoc {
+  uuid: string;
   field_name: string;
   field_value: string;
   confidence: number;
+  doc_url: string;
 }
 
 const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
@@ -17,6 +23,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [docImage, setDocImage] = useState<string | null>(null);
   const [specificClientId, setSpecificClientId] = useState<string | null>(clientId);
+  const [showCurrentDocFields, setShowCurrentDocFields] = useState(false);
 
   const loadDocumentsForReview = async () => {
     const response = await fetch('http://127.0.0.1:8080/api/get_documents_for_review', {
@@ -24,11 +31,26 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ client_id: specificClientId, doc_status: 'Awaiting Review' }),
+      body: JSON.stringify({ client_id: specificClientId, doc_status: 'extracted' }),
     });
     const data = await response.json();
-    setWorkpapers(data.documents);
-    if (data.documents.length > 0) {
+
+    const docUrlToUuidMap: Record<string, string> = {};
+
+    const documentsWithUUID = data.documents.map((doc: Workpaper) => {
+      if (!docUrlToUuidMap[doc.doc_url]) {
+        docUrlToUuidMap[doc.doc_url] = uuidv4(); // Assign a UUID to each unique doc_url
+      }
+
+      return {
+        ...doc,
+        uuid: docUrlToUuidMap[doc.doc_url], // Use the same UUID for fields with the same doc_url
+      };
+    });
+
+    setWorkpapers(documentsWithUUID);
+
+    if (documentsWithUUID.length > 0) {
       setCurrentDocIndex(0); // Reset to the first document
     } else {
       setDocImage(null); // Clear the image if no documents are found
@@ -37,9 +59,10 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
 
   // Load document image whenever the current document changes
   useEffect(() => {
-    if (workpapers.length > 0) {
-      const loadDocumentImage = async () => {
-        const docName = workpapers[currentDocIndex].doc_name;
+    const loadDocumentImage = async () => {
+      const docName = workpapers[currentDocIndex]?.doc_name;
+      if (docName) {
+        setDocImage(null); // Clear the previous image before loading a new one
         const response = await fetch('http://127.0.0.1:8080/api/get_document_image', {
           method: 'POST',
           headers: {
@@ -48,29 +71,30 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
           body: JSON.stringify({ doc_name: docName }),
         });
         if (response.ok) {
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                setDocImage(url);
-            } else {
-                console.error("Failed to load document image:", response.statusText);
-            }
-        };
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          
+          setDocImage(url); // Set the new object URL
+        } else {
+          console.error("Failed to load document image:", response.statusText);
+        }
+      }
+    };
 
-        loadDocumentImage();
+    if (workpapers.length > 0) {
+      loadDocumentImage();
     }
   }, [currentDocIndex, workpapers]);
 
   const handleNextDocument = () => {
     if (currentDocIndex < workpapers.length - 1) {
-      const newIndex = currentDocIndex + 1;
-      setCurrentDocIndex(newIndex);
+      setCurrentDocIndex(currentDocIndex + 1);
     }
   };
 
   const handlePreviousDocument = () => {
     if (currentDocIndex > 0) {
-      const newIndex = currentDocIndex - 1;
-      setCurrentDocIndex(newIndex);
+      setCurrentDocIndex(currentDocIndex - 1);
     }
   };
 
@@ -80,11 +104,81 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
     setWorkpapers(updatedWorkpapers);
   };
 
+  const handleApproveDocument = async () => {
+    const currentDocUUID = workpapers[currentDocIndex].uuid;
+
+    try {
+      await fetch('http://127.0.0.1:8080/api/approve_document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ doc_uuid: currentDocUUID }),
+      });
+
+      alert('Document approved successfully.');
+    } catch (error) {
+      console.error('Error approving document:', error);
+      alert('Failed to approve document.');
+    }
+  };
+
+  const handleDocumentClick = (uuid: string) => {
+    const index = workpapers.findIndex(wp => wp.uuid === uuid);
+    if (index !== -1) {
+      setCurrentDocIndex(index);
+    }
+  };
+
+  const filteredWorkpapers = showCurrentDocFields
+    ? workpapers.filter((workpaper) => workpaper.uuid === workpapers[currentDocIndex]?.uuid)
+    : workpapers;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <div style={{ flex: 1 }}>
-        <TableContainer component={Paper} style={{ marginBottom: '16px' }}>
-          <Table>
+    <div style={{ display: 'flex', maxHeight: '1200px', width: '100%' }}>
+      <div style={{ flex: 1, width: '50%', maxHeight: '800px', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <IconButton onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
+            <ArrowBackIosIcon />
+          </IconButton>
+          <div style={{ display: 'flex', overflowX: 'auto', maxWidth: '80%' }}>
+            {Array.from(new Set(workpapers.map(wp => wp.uuid))).map((uuid) => {
+              const docName = workpapers.find(wp => wp.uuid === uuid)?.doc_name || 'Document';
+              return (
+                <div
+                  key={uuid}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '30px',
+                    width: '100px',
+                    backgroundColor: workpapers[currentDocIndex].uuid === uuid ? '#d3d3d3' : '#f0f0f0',
+                    borderRadius: '4px',
+                    margin: '0 4px',
+                    padding: '4px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleDocumentClick(uuid)}
+                >
+                  <PictureAsPdfIcon style={{ marginRight: '4px' }} />
+                  <span>{docName}</span>
+                </div>
+              );
+            })}
+          </div>
+          <IconButton onClick={handleNextDocument} disabled={currentDocIndex === workpapers.length - 1}>
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </div>
+
+        <FormControlLabel
+          control={<Switch checked={showCurrentDocFields} onChange={() => setShowCurrentDocFields(!showCurrentDocFields)} />}
+          label="Show Only Fields for Current Document"
+          style={{ marginBottom: '8px' }}
+        />
+        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '100%' }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>Document Name</TableCell>
@@ -92,11 +186,12 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                 <TableCell>Field Name</TableCell>
                 <TableCell>Field Value</TableCell>
                 <TableCell>Confidence</TableCell>
+                <TableCell>Approve</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {workpapers.map((workpaper, index) => (
-                <TableRow key={workpaper.doc_name}>
+              {filteredWorkpapers.map((workpaper, index) => (
+                <TableRow key={workpaper.uuid + index}>
                   <TableCell>{workpaper.doc_name}</TableCell>
                   <TableCell>{workpaper.doc_status}</TableCell>
                   <TableCell>{workpaper.field_name}</TableCell>
@@ -109,13 +204,23 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                     />
                   </TableCell>
                   <TableCell>{workpaper.confidence}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleApproveDocument}
+                      disabled={!showCurrentDocFields || workpaper.uuid !== workpapers[currentDocIndex].uuid}
+                    >
+                      Approve
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
         <TextField
-          label="Specific Client ID"
+          label="Review Client ID"
           variant="outlined"
           value={specificClientId || ''}
           onChange={(e) => setSpecificClientId(e.target.value)}
@@ -126,9 +231,14 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
           Load Review Docs
         </Button>
       </div>
-      <div style={{ flex: 1, marginLeft: '0px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {workpapers.length > 0 && (
+          <div style={{ marginBottom: '8px' }}>
+            <strong>Document: {workpapers[currentDocIndex]?.doc_name}</strong>
+          </div>
+        )}
         {docImage && (
-          <img src={docImage} alt="Document" style={{ width: 'auto', height: 'auto', maxWidth: '40%' }} />
+          <img src={docImage} alt="Document" style={{ width: 'auto', height: '800px', maxWidth: '80%' }} />
         )}
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <Button variant="contained" onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>

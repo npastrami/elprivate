@@ -88,7 +88,7 @@ async def handle_file(client_id, uploaded_file, form_type, version_id):
     if form_type != 'None':
         xml_str = await extract_data(client_id, filename, upload_bucket_mapping[form_type], form_type, version_id)
         if xml_str:
-            return {"status": "Extract Completed", "xml": xml_str}
+            return {"status": "Awaiting Review", "xml": xml_str}
         else:
             return {"status": "Empty Extraction"}
     else:

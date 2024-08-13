@@ -17,7 +17,11 @@ export const JobInput = () => {
     [setJobData]
   );
 
-  const setVersionID = (newVersionID: string) => setJobData((prevJobData) => ({ ...prevJobData, versionID: newVersionID }));
+  const setVersionID = useCallback(
+    (newVersionID: string) => setJobData((prevJobData) => ({ ...prevJobData, versionID: newVersionID })),
+    [setJobData]
+  );
+  
 
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
