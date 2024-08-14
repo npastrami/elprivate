@@ -24,9 +24,8 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [docImage, setDocImage] = useState<string | null>(null);
   const [specificClientId, setSpecificClientId] = useState<string | null>(clientId);
-  const [showCurrentDocFields, setShowCurrentDocFields] = useState(false);
+  const [showCurrentDocFields, setShowCurrentDocFields] = useState<boolean>(true); // Preset toggle to "on"
 
-  // Track the order of documents based on the badges
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
   const loadDocumentsForReview = async () => {
@@ -65,23 +64,25 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   // Load document image whenever the current document changes
   useEffect(() => {
     const loadDocumentImage = async () => {
-      const docName = workpapers[currentDocIndex]?.doc_name;
-      if (docName) {
-        setDocImage(null); // Clear the previous image before loading a new one
-        const response = await fetch('http://127.0.0.1:8080/api/get_document_image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ doc_name: docName }),
-        });
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          
-          setDocImage(url); // Set the new object URL
-        } else {
-          console.error("Failed to load document image:", response.statusText);
+      if (workpapers.length > 0 && currentDocIndex >= 0 && currentDocIndex < workpapers.length) {
+        const docName = workpapers[currentDocIndex]?.doc_name;
+        if (docName) {
+          setDocImage(null); // Clear the previous image before loading a new one
+          const response = await fetch('http://127.0.0.1:8080/api/get_document_image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ doc_name: docName }),
+          });
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            setDocImage(url); // Set the new object URL
+          } else {
+            console.error("Failed to load document image:", response.statusText);
+          }
         }
       }
     };
@@ -149,11 +150,11 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
     <div style={{ display: 'flex', maxHeight: '1200px', width: '100%' }}>
       <div style={{ flex: 1, width: '50%', maxHeight: '800px', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <IconButton onClick={handlePreviousDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === 0}>
+          <IconButton onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
             <ArrowBackIosIcon />
           </IconButton>
           <div style={{ display: 'flex', overflowX: 'auto', maxWidth: '80%' }}>
-            {orderedDocUUIDs.map((uuid) => {
+            {workpapers.length > 0 && Array.from(new Set(workpapers.map(wp => wp.uuid))).map((uuid) => {
               const docName = workpapers.find(wp => wp.uuid === uuid)?.doc_name || 'Document';
               const isApproved = workpapers.find(wp => wp.uuid === uuid)?.approved || false;
               return (
@@ -165,7 +166,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                     justifyContent: 'center',
                     height: '30px',
                     width: '100px',
-                    backgroundColor: isApproved ? '#4287f5' : (workpapers[currentDocIndex].uuid === uuid ? '#d3d3d3' : '#f0f0f0'),
+                    backgroundColor: isApproved ? '#4287f5' : (workpapers[currentDocIndex]?.uuid === uuid ? '#d3d3d3' : '#f0f0f0'),
                     borderRadius: '4px',
                     margin: '0 4px',
                     padding: '4px',
@@ -179,7 +180,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
               );
             })}
           </div>
-          <IconButton onClick={handleNextDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === orderedDocUUIDs.length - 1}>
+          <IconButton onClick={handleNextDocument} disabled={currentDocIndex === workpapers.length - 1}>
             <ArrowForwardIosIcon />
           </IconButton>
         </div>
@@ -212,7 +213,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                       onChange={(e) => handleFieldValueChange(index, e.target.value)}
                       variant="outlined"
                       fullWidth
-                      disabled={workpapers[currentDocIndex].approved}  // Disable input if approved
+                      disabled={workpapers[currentDocIndex]?.approved}  // Disable input if approved
                     />
                   </TableCell>
                   <TableCell>{workpaper.confidence}</TableCell>
@@ -259,7 +260,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
           </div>
         )}
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Button variant="contained" onClick={handlePreviousDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === 0}>
+          <Button variant="contained" onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
             Previous
           </Button>
           <Button
@@ -269,7 +270,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
           >
             {workpapers[currentDocIndex]?.approved ? "Un-Approve" : "Approve"}
           </Button>
-          <Button variant="contained" onClick={handleNextDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === orderedDocUUIDs.length - 1}>
+          <Button variant="contained" onClick={handleNextDocument} disabled={currentDocIndex === workpapers.length - 1}>
             Next
           </Button>
         </div>
