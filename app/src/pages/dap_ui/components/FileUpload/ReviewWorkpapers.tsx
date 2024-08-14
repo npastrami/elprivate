@@ -16,6 +16,7 @@ interface Workpaper extends ClientDoc {
   field_value: string;
   confidence: number;
   doc_url: string;
+  approved: boolean;  // Track approval status
 }
 
 const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
@@ -24,6 +25,9 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   const [docImage, setDocImage] = useState<string | null>(null);
   const [specificClientId, setSpecificClientId] = useState<string | null>(clientId);
   const [showCurrentDocFields, setShowCurrentDocFields] = useState(false);
+
+  // Track the order of documents based on the badges
+  const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
   const loadDocumentsForReview = async () => {
     const response = await fetch('http://127.0.0.1:8080/api/get_documents_for_review', {
@@ -45,6 +49,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
       return {
         ...doc,
         uuid: docUrlToUuidMap[doc.doc_url], // Use the same UUID for fields with the same doc_url
+        approved: false,  // Initial approval status
       };
     });
 
@@ -86,15 +91,19 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
     }
   }, [currentDocIndex, workpapers]);
 
+  // Navigate to the next document in the badge row order
   const handleNextDocument = () => {
-    if (currentDocIndex < workpapers.length - 1) {
-      setCurrentDocIndex(currentDocIndex + 1);
+    const nextIndex = orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) + 1;
+    if (nextIndex < orderedDocUUIDs.length) {
+      setCurrentDocIndex(workpapers.findIndex(wp => wp.uuid === orderedDocUUIDs[nextIndex]));
     }
   };
 
+  // Navigate to the previous document in the badge row order
   const handlePreviousDocument = () => {
-    if (currentDocIndex > 0) {
-      setCurrentDocIndex(currentDocIndex - 1);
+    const prevIndex = orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) - 1;
+    if (prevIndex >= 0) {
+      setCurrentDocIndex(workpapers.findIndex(wp => wp.uuid === orderedDocUUIDs[prevIndex]));
     }
   };
 
@@ -105,18 +114,20 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   };
 
   const handleApproveDocument = async () => {
-    const currentDocUUID = workpapers[currentDocIndex].uuid;
+    const updatedWorkpapers = [...workpapers];
+    updatedWorkpapers[currentDocIndex].approved = !updatedWorkpapers[currentDocIndex].approved;
 
+    // Toggle between Approve and Un-Approve
     try {
       await fetch('http://127.0.0.1:8080/api/approve_document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ doc_uuid: currentDocUUID }),
+        body: JSON.stringify({ doc_uuid: updatedWorkpapers[currentDocIndex].uuid }),
       });
 
-      alert('Document approved successfully.');
+      setWorkpapers(updatedWorkpapers);
     } catch (error) {
       console.error('Error approving document:', error);
       alert('Failed to approve document.');
@@ -138,12 +149,13 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
     <div style={{ display: 'flex', maxHeight: '1200px', width: '100%' }}>
       <div style={{ flex: 1, width: '50%', maxHeight: '800px', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <IconButton onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
+          <IconButton onClick={handlePreviousDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === 0}>
             <ArrowBackIosIcon />
           </IconButton>
           <div style={{ display: 'flex', overflowX: 'auto', maxWidth: '80%' }}>
-            {Array.from(new Set(workpapers.map(wp => wp.uuid))).map((uuid) => {
+            {orderedDocUUIDs.map((uuid) => {
               const docName = workpapers.find(wp => wp.uuid === uuid)?.doc_name || 'Document';
+              const isApproved = workpapers.find(wp => wp.uuid === uuid)?.approved || false;
               return (
                 <div
                   key={uuid}
@@ -153,7 +165,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                     justifyContent: 'center',
                     height: '30px',
                     width: '100px',
-                    backgroundColor: workpapers[currentDocIndex].uuid === uuid ? '#d3d3d3' : '#f0f0f0',
+                    backgroundColor: isApproved ? '#4287f5' : (workpapers[currentDocIndex].uuid === uuid ? '#d3d3d3' : '#f0f0f0'),
                     borderRadius: '4px',
                     margin: '0 4px',
                     padding: '4px',
@@ -161,13 +173,13 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                   }}
                   onClick={() => handleDocumentClick(uuid)}
                 >
-                  <PictureAsPdfIcon style={{ marginRight: '4px' }} />
-                  <span>{docName}</span>
+                  <PictureAsPdfIcon style={{ marginRight: '4px', color: isApproved ? '#ffffff' : '#000000' }} />
+                  <span style={{ color: isApproved ? '#ffffff' : '#000000' }}>{docName}</span>
                 </div>
               );
             })}
           </div>
-          <IconButton onClick={handleNextDocument} disabled={currentDocIndex === workpapers.length - 1}>
+          <IconButton onClick={handleNextDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === orderedDocUUIDs.length - 1}>
             <ArrowForwardIosIcon />
           </IconButton>
         </div>
@@ -186,7 +198,6 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                 <TableCell>Field Name</TableCell>
                 <TableCell>Field Value</TableCell>
                 <TableCell>Confidence</TableCell>
-                <TableCell>Approve</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -201,19 +212,10 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
                       onChange={(e) => handleFieldValueChange(index, e.target.value)}
                       variant="outlined"
                       fullWidth
+                      disabled={workpapers[currentDocIndex].approved}  // Disable input if approved
                     />
                   </TableCell>
                   <TableCell>{workpaper.confidence}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleApproveDocument}
-                      disabled={!showCurrentDocFields || workpaper.uuid !== workpapers[currentDocIndex].uuid}
-                    >
-                      Approve
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -231,20 +233,43 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
           Load Review Docs
         </Button>
       </div>
-      <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
         {workpapers.length > 0 && (
           <div style={{ marginBottom: '8px' }}>
             <strong>Document: {workpapers[currentDocIndex]?.doc_name}</strong>
           </div>
         )}
         {docImage && (
-          <img src={docImage} alt="Document" style={{ width: 'auto', height: '800px', maxWidth: '80%' }} />
+          <div style={{ position: 'relative' }}>
+            {workpapers[currentDocIndex]?.approved && (
+              <div style={{
+                position: 'absolute',
+                top: '8px',
+                left: '8px',
+                backgroundColor: 'white',
+                color: '#4287f5',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)',
+              }}>
+                Approved
+              </div>
+            )}
+            <img src={docImage} alt="Document" style={{ width: 'auto', height: '800px', maxWidth: '80%' }} />
+          </div>
         )}
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Button variant="contained" onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
+          <Button variant="contained" onClick={handlePreviousDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === 0}>
             Previous
           </Button>
-          <Button variant="contained" onClick={handleNextDocument} disabled={currentDocIndex === workpapers.length - 1}>
+          <Button
+            variant="contained"
+            color={workpapers[currentDocIndex]?.approved ? "secondary" : "primary"}
+            onClick={handleApproveDocument}
+          >
+            {workpapers[currentDocIndex]?.approved ? "Un-Approve" : "Approve"}
+          </Button>
+          <Button variant="contained" onClick={handleNextDocument} disabled={orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) === orderedDocUUIDs.length - 1}>
             Next
           </Button>
         </div>
