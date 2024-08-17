@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Button, Table, TableBody, TextField, TableCell, TableContainer, TableHead, TableRow, Paper, Switch, FormControlLabel, IconButton } from '@mui/material';
 import { ClientDoc } from '../ClientDataTable/ClientDataTable';
 import { v4 as uuidv4 } from 'uuid';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { JobContext } from '../JobInput/JobContext';  // Import the JobContext
 
-interface ReviewWorkpapersProps {
-  clientId: string;
-}
+interface ReviewWorkpapersProps {}
 
 interface Workpaper extends ClientDoc {
   uuid: string;
@@ -19,22 +18,27 @@ interface Workpaper extends ClientDoc {
   approved: boolean;  // Track approval status
 }
 
-const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
+const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
+  const { clientID } = useContext(JobContext);  // Access clientID from JobContext
   const [workpapers, setWorkpapers] = useState<Workpaper[]>([]);
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [docImage, setDocImage] = useState<string | null>(null);
-  const [specificClientId, setSpecificClientId] = useState<string | null>(clientId);
   const [showCurrentDocFields, setShowCurrentDocFields] = useState<boolean>(true); // Preset toggle to "on"
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
   const loadDocumentsForReview = async () => {
+    if (!clientID) {
+      alert("Client ID is required to load documents.");
+      return;
+    }
+  
     const response = await fetch('http://127.0.0.1:8080/api/get_documents_for_review', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ client_id: specificClientId }),
+      body: JSON.stringify({ client_id: clientID }),  // Use clientID from context
     });
     const data = await response.json();
   
@@ -129,7 +133,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
         },
         body: JSON.stringify({
           doc_name: updatedWorkpapers[currentDocIndex].doc_name,
-          client_id: specificClientId,
+          client_id: clientID,  // Use clientID from context
           approved: !isCurrentlyApproved,  // Send the new approval status
         }),
       });
@@ -163,7 +167,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ client_id: specificClientId }),
+      body: JSON.stringify({ client_id: clientID }),  // Use clientID from context
     });
     const data = await response.json();
 
@@ -250,14 +254,6 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
             </TableBody>
           </Table>
         </TableContainer>
-        <TextField
-          label="Review Client ID"
-          variant="outlined"
-          value={specificClientId || ''}
-          onChange={(e) => setSpecificClientId(e.target.value)}
-          fullWidth
-          style={{ marginBottom: '16px' }}
-        />
         <Button variant="contained" onClick={loadDocumentsForReview}>
           Load Review Docs
         </Button>
