@@ -3,6 +3,7 @@ from quart_cors import cors
 from werkzeug.utils import secure_filename
 from dap.azure.uploader import Uploader
 from dap.azure.extractor import Extractor
+from dap.azure.catcher import Catcher
 from azure.storage.blob.aio import BlobServiceClient
 import dap.credentials as credentials 
 import aiofiles
@@ -31,6 +32,7 @@ from accounts.models.role_model import Role
 from accounts.routes.auth_routes import auth_routes
 from accounts.routes.user_routes import user_routes
 from accounts.controllers.user_controller import user_controller
+import os
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
@@ -179,6 +181,51 @@ async def get_document_image():
         print(f"Error while processing the document: {str(e)}")
         print(traceback.format_exc())
         return jsonify({"error": "Internal server error"}), 500
+    
+@app.route('/api/approve_document', methods=['POST'])
+async def approve_document():
+    data = await request.get_json()
+    doc_name = data.get('doc_name')
+    client_id = data.get('client_id')
+    approved = data.get('approved')  # Get the approved status from the request
+
+    if not doc_name or not client_id:
+        return jsonify({"error": "Missing doc_name or client_id"}), 400
+
+    db = DapDatabase(None, None)
+    new_status = 'reviewed' if approved else 'extracted'
+    await db.update_review_status(doc_name, client_id, new_status)  # Update the status
+    await db.close()
+
+    return jsonify({"status": "success", "new_status": new_status})
+    
+@app.route('/api/generate_final_docs', methods=['POST'])
+async def generate_final_docs():
+    data = await request.get_json()
+    client_id = data.get('client_id')
+    print(f"Generating final docs for client_id: {client_id}")
+    catcher = Catcher('approved-docs')  # Specify the Azure Blob Storage container for final docs
+    db = DapDatabase(client_id, None)
+
+    approved_docs = await db.get_documents_for_review(client_id)
+    # print(f"Approved docs: {approved_docs}")
+    
+    final_urls = []
+    
+    for doc in approved_docs:
+        print(f"Processing document: {doc['doc_name']} with status {doc['doc_status']}")
+        if doc['doc_status'] == 'reviewed':
+            doc_name = os.path.basename(doc['doc_url'])
+            print(f"Document name for processing: {doc_name}")
+            field_data = {doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']} for doc in approved_docs if doc['doc_name'] == doc_name}
+            print(f"Field data to be uploaded: {field_data}")
+            final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
+            print(final_url)
+            final_urls.append(final_url)
+    
+    await db.close()
+    
+    return jsonify({"final_docs": final_urls})
 
 @app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])
 async def download_csv(document_id):
@@ -230,14 +277,6 @@ async def sort():
     
     print(f'sorted_files: {sorted_files}')
     return {'sorted_files': sorted_files}
-
-@app.route('/api/approve_document', methods=['POST'])
-async def approve_document():
-    data = await request.get_json()
-    db = DapDatabase(None, None)
-    doc_name = data.get('doc_name')
-    await db.approve_document(doc_name)
-    return jsonify({"status": "success"})
 
 @app.route('/api/download_all_documents', methods=['POST', 'GET'])
 async def download_all_documents():
