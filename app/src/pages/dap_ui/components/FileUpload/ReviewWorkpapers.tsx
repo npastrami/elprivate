@@ -30,6 +30,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const [sortColumn, setSortColumn] = useState<keyof Workpaper | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
   const [filters, setFilters] = useState<{ [key in keyof Workpaper]?: string }>({});
+  const [hideNoneValues, setHideNoneValues] = useState<boolean>(false); // New toggle state for hiding None values
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
@@ -105,11 +106,19 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
 
   // Sort and filter the workpapers when filters or sorting change
   useEffect(() => {
-    let newWorkpapers = showCurrentDocFields
-      ? workpapers.filter((wp) => wp.uuid === workpapers[currentDocIndex]?.uuid)
-      : [...workpapers];
-
-    // Apply filters
+    let newWorkpapers = [...workpapers];
+  
+    // Apply "Hide None Values" filter first
+    if (hideNoneValues) {
+      newWorkpapers = newWorkpapers.filter((workpaper) => workpaper.field_value !== "None");
+    }
+  
+    // Apply the "Show Only Fields for Current Document" filter
+    if (showCurrentDocFields) {
+      newWorkpapers = newWorkpapers.filter((wp) => wp.uuid === workpapers[currentDocIndex]?.uuid);
+    }
+  
+    // Apply other filters
     Object.keys(filters).forEach((key) => {
       const filterValue = filters[key as keyof Workpaper];
       if (filterValue) {
@@ -120,21 +129,21 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
         );
       }
     });
-
+  
     // Apply sorting
     if (sortColumn && sortOrder) {
       newWorkpapers.sort((a, b) => {
         const aValue = a[sortColumn];
         const bValue = b[sortColumn];
-
+  
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
     }
-
+  
     setFilteredWorkpapers(newWorkpapers);
-  }, [filters, sortColumn, sortOrder, workpapers, showCurrentDocFields, currentDocIndex]);
+  }, [filters, sortColumn, sortOrder, workpapers, showCurrentDocFields, currentDocIndex, hideNoneValues]);
 
   const handleSort = (column: keyof Workpaper) => {
     const newSortOrder = sortColumn === column && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -269,6 +278,11 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
         <FormControlLabel
           control={<Switch checked={showCurrentDocFields} onChange={() => setShowCurrentDocFields(!showCurrentDocFields)} />}
           label="Show Only Fields for Current Document"
+          style={{ marginBottom: '8px' }}
+        />
+        <FormControlLabel
+          control={<Switch checked={hideNoneValues} onChange={() => setHideNoneValues(!hideNoneValues)} />}
+          label="Hide None Values"
           style={{ marginBottom: '8px' }}
         />
         <TableContainer component={Paper} style={{ marginBottom: '16px', height: '100%' }}>
