@@ -7,6 +7,7 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 import datetime
 import dap.credentials as credentials
 import base64
+import json
 
 class DapDatabase:
     def __init__(self, client_id, doc_url):
@@ -63,6 +64,20 @@ class DapDatabase:
         );
         """
         await self.conn.execute(create_extracted_fields_table_query)
+        
+            # Create table for approved documents
+        create_approved_docs_table_query = """
+        CREATE TABLE IF NOT EXISTS approved_docs (
+            id SERIAL PRIMARY KEY,
+            client_id TEXT,
+            doc_name TEXT,
+            doc_url TEXT,
+            approved_date TIMESTAMP,
+            field_data JSONB
+        );
+        """
+        await self.conn.execute(create_approved_docs_table_query)
+
 
     async def post2postgres_upload(self, client_id, doc_url, doc_status, doc_type, container_name, access_id):
         await self.ensure_connected()
@@ -106,18 +121,18 @@ class DapDatabase:
         if client_id:
             query = """
             SELECT DISTINCT ON (doc_url, field_name) * FROM extracted_fields 
-            WHERE doc_status = 'extracted' AND client_id = $1 AND field_value IS NOT NULL
+            WHERE client_id = $1 AND field_value IS NOT NULL
             ORDER BY doc_url, field_name, id ASC;
             """
             rows = await self.conn.fetch(query, str(client_id))  # Ensure client_id is a string
         else:
             query = """
             SELECT DISTINCT ON (doc_url, field_name) * FROM extracted_fields 
-            WHERE doc_status = 'extracted' AND field_value IS NOT NULL
+            WHERE field_value IS NOT NULL
             ORDER BY doc_url, field_name, id ASC;
             """
             rows = await self.conn.fetch(query)
-        
+
         return [dict(row) for row in rows]
 
 
@@ -145,14 +160,53 @@ class DapDatabase:
 
         return doc_url
     
-    async def approve_document(self, doc_name):
+    async def approve_document(self, client_id, doc_name):
         await self.ensure_connected()
+        print(f"Connected to database. Saving document {doc_name} for client {client_id}.")
         query = """
         UPDATE client_docs 
         SET doc_status = 'reviewed' 
-        WHERE doc_name = $1;
+        WHERE doc_name = $1 AND client_id = $2;
         """
-        await self.conn.execute(query, doc_name)
+        result = await self.conn.execute(query, client_id, doc_name)
+        print(f"Update result: {result}")
+        
+    async def update_review_status(self, doc_name, client_id, new_status):
+        await self.ensure_connected()
+        print(f"Updating document {doc_name} for client {client_id} to status {new_status}.")
+        query = """
+        UPDATE client_docs 
+        SET doc_status = $1 
+        WHERE doc_name = $2 AND client_id = $3;
+        """
+        result = await self.conn.execute(query, new_status, doc_name, client_id)
+        print(f"Update result: {result}")
+
+        # Also update the status in extracted_fields table
+        update_extracted_query = """
+        UPDATE extracted_fields
+        SET doc_status = $1
+        WHERE doc_name = $2 AND client_id = $3;
+        """
+        await self.conn.execute(update_extracted_query, new_status, doc_name, client_id)
+        
+    async def save_approved_document(self, client_id, doc_name, doc_url, field_data):
+        await self.ensure_connected()
+        print(f"Connected to database. Saving document {doc_name} for client {client_id}.")
+        
+        insert_query = """
+        INSERT INTO approved_docs (client_id, doc_name, doc_url, approved_date, field_data)
+        VALUES ($1, $2, $3, $4, $5) RETURNING id;
+        """
+        
+        approved_date = datetime.datetime.utcnow()
+        print(f"Executing query: {insert_query}")
+        
+        last_inserted_id = await self.conn.fetchval(insert_query, client_id, doc_name, doc_url, approved_date, json.dumps(field_data))
+        print(f"Document saved with ID: {last_inserted_id}")
+        
+        return last_inserted_id
+
     
     async def generate_csv(self, document_id, client_id):
         await self.ensure_connected()

@@ -34,26 +34,26 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ client_id: specificClientId, doc_status: 'extracted' }),
+      body: JSON.stringify({ client_id: specificClientId }),
     });
     const data = await response.json();
-
+  
     const docUrlToUuidMap: Record<string, string> = {};
-
+  
     const documentsWithUUID = data.documents.map((doc: Workpaper) => {
       if (!docUrlToUuidMap[doc.doc_url]) {
         docUrlToUuidMap[doc.doc_url] = uuidv4(); // Assign a UUID to each unique doc_url
       }
-
+  
       return {
         ...doc,
         uuid: docUrlToUuidMap[doc.doc_url], // Use the same UUID for fields with the same doc_url
-        approved: false,  // Initial approval status
+        approved: doc.doc_status === 'reviewed',  // Reflect 'reviewed' status as 'approved'
       };
     });
-
+  
     setWorkpapers(documentsWithUUID);
-
+  
     if (documentsWithUUID.length > 0) {
       setCurrentDocIndex(0); // Reset to the first document
     } else {
@@ -116,18 +116,29 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
 
   const handleApproveDocument = async () => {
     const updatedWorkpapers = [...workpapers];
-    updatedWorkpapers[currentDocIndex].approved = !updatedWorkpapers[currentDocIndex].approved;
-
-    // Toggle between Approve and Un-Approve
+    const isCurrentlyApproved = updatedWorkpapers[currentDocIndex].approved;
+    updatedWorkpapers[currentDocIndex].approved = !isCurrentlyApproved;
+  
+    console.log(`Toggling approval for document: ${updatedWorkpapers[currentDocIndex].doc_name} to ${!isCurrentlyApproved ? "reviewed" : "extracted"}`);
+  
     try {
-      await fetch('http://127.0.0.1:8080/api/approve_document', {
+      const response = await fetch('http://127.0.0.1:8080/api/approve_document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ doc_uuid: updatedWorkpapers[currentDocIndex].uuid }),
+        body: JSON.stringify({
+          doc_name: updatedWorkpapers[currentDocIndex].doc_name,
+          client_id: specificClientId,
+          approved: !isCurrentlyApproved,  // Send the new approval status
+        }),
       });
-
+  
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+  
+      console.log(`Document approval status updated: ${updatedWorkpapers[currentDocIndex].approved}`);
       setWorkpapers(updatedWorkpapers);
     } catch (error) {
       console.error('Error approving document:', error);
@@ -145,6 +156,23 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
   const filteredWorkpapers = showCurrentDocFields
     ? workpapers.filter((workpaper) => workpaper.uuid === workpapers[currentDocIndex]?.uuid)
     : workpapers;
+
+  const generateFinalDocs = async () => {
+    const response = await fetch('http://127.0.0.1:8080/api/generate_final_docs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ client_id: specificClientId }),
+    });
+    const data = await response.json();
+
+    if (data.final_docs) {
+      alert("Final documents generated successfully!");
+    } else {
+      alert("Failed to generate final documents.");
+    }
+  };
 
   return (
     <div style={{ display: 'flex', maxHeight: '1200px', width: '100%' }}>
@@ -205,7 +233,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
               {filteredWorkpapers.map((workpaper, index) => (
                 <TableRow key={workpaper.uuid + index}>
                   <TableCell>{workpaper.doc_name}</TableCell>
-                  <TableCell>{workpaper.doc_status}</TableCell>
+                  <TableCell>{workpaper.approved ? 'Reviewed' : 'Extracted'}</TableCell>
                   <TableCell>{workpaper.field_name}</TableCell>
                   <TableCell>
                     <TextField
@@ -232,6 +260,9 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = ({ clientId }) => {
         />
         <Button variant="contained" onClick={loadDocumentsForReview}>
           Load Review Docs
+        </Button>
+        <Button variant="contained" onClick={generateFinalDocs}>
+          Generate Final Docs
         </Button>
       </div>
       <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
