@@ -18,12 +18,18 @@ interface Workpaper extends ClientDoc {
   approved: boolean;  // Track approval status
 }
 
+type SortOrder = 'asc' | 'desc' | null;
+
 const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const { clientID } = useContext(JobContext);  // Access clientID from JobContext
   const [workpapers, setWorkpapers] = useState<Workpaper[]>([]);
+  const [filteredWorkpapers, setFilteredWorkpapers] = useState<Workpaper[]>([]);
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [docImage, setDocImage] = useState<string | null>(null);
   const [showCurrentDocFields, setShowCurrentDocFields] = useState<boolean>(true); // Preset toggle to "on"
+  const [sortColumn, setSortColumn] = useState<keyof Workpaper | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null);
+  const [filters, setFilters] = useState<{ [key in keyof Workpaper]?: string }>({});
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
@@ -57,6 +63,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     });
   
     setWorkpapers(documentsWithUUID);
+    setFilteredWorkpapers(documentsWithUUID);
   
     if (documentsWithUUID.length > 0) {
       setCurrentDocIndex(0); // Reset to the first document
@@ -96,6 +103,52 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     }
   }, [currentDocIndex, workpapers]);
 
+  // Sort and filter the workpapers when filters or sorting change
+  useEffect(() => {
+    let newWorkpapers = showCurrentDocFields
+      ? workpapers.filter((wp) => wp.uuid === workpapers[currentDocIndex]?.uuid)
+      : [...workpapers];
+
+    // Apply filters
+    Object.keys(filters).forEach((key) => {
+      const filterValue = filters[key as keyof Workpaper];
+      if (filterValue) {
+        newWorkpapers = newWorkpapers.filter((workpaper) =>
+          String(workpaper[key as keyof Workpaper])
+            .toLowerCase()
+            .includes(filterValue.toLowerCase())
+        );
+      }
+    });
+
+    // Apply sorting
+    if (sortColumn && sortOrder) {
+      newWorkpapers.sort((a, b) => {
+        const aValue = a[sortColumn];
+        const bValue = b[sortColumn];
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    setFilteredWorkpapers(newWorkpapers);
+  }, [filters, sortColumn, sortOrder, workpapers, showCurrentDocFields, currentDocIndex]);
+
+  const handleSort = (column: keyof Workpaper) => {
+    const newSortOrder = sortColumn === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortColumn(column);
+    setSortOrder(newSortOrder);
+  };
+
+  const handleFilterChange = (column: keyof Workpaper, value: string) => {
+    setFilters({
+      ...filters,
+      [column]: value,
+    });
+  };
+
   // Navigate to the next document in the badge row order
   const handleNextDocument = () => {
     const nextIndex = orderedDocUUIDs.indexOf(workpapers[currentDocIndex].uuid) + 1;
@@ -113,9 +166,9 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   };
 
   const handleFieldValueChange = (index: number, newValue: string) => {
-    const updatedWorkpapers = [...workpapers];
+    const updatedWorkpapers = [...filteredWorkpapers];
     updatedWorkpapers[index].field_value = newValue;
-    setWorkpapers(updatedWorkpapers);
+    setFilteredWorkpapers(updatedWorkpapers);
   };
 
   const handleApproveDocument = async () => {
@@ -156,10 +209,6 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
       setCurrentDocIndex(index);
     }
   };
-
-  const filteredWorkpapers = showCurrentDocFields
-    ? workpapers.filter((workpaper) => workpaper.uuid === workpapers[currentDocIndex]?.uuid)
-    : workpapers;
 
   const generateFinalDocs = async () => {
     const response = await fetch('http://127.0.0.1:8080/api/generate_final_docs', {
@@ -226,11 +275,51 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Document Name</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Field Name</TableCell>
-                <TableCell>Field Value</TableCell>
-                <TableCell>Confidence</TableCell>
+                <TableCell>
+                  <Button onClick={() => handleSort('doc_name')}>Document Name</Button>
+                  <TextField
+                    value={filters.doc_name || ''}
+                    onChange={(e) => handleFilterChange('doc_name', e.target.value)}
+                    placeholder="Search"
+                    variant="standard"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={() => handleSort('approved')}>Status</Button>
+                  <TextField
+                    value={filters.approved || ''}
+                    onChange={(e) => handleFilterChange('approved', e.target.value)}
+                    placeholder="Search"
+                    variant="standard"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={() => handleSort('field_name')}>Field Name</Button>
+                  <TextField
+                    value={filters.field_name || ''}
+                    onChange={(e) => handleFilterChange('field_name', e.target.value)}
+                    placeholder="Search"
+                    variant="standard"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={() => handleSort('field_value')}>Field Value</Button>
+                  <TextField
+                    value={filters.field_value || ''}
+                    onChange={(e) => handleFilterChange('field_value', e.target.value)}
+                    placeholder="Search"
+                    variant="standard"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={() => handleSort('confidence')}>Confidence</Button>
+                  <TextField
+                    value={filters.confidence || ''}
+                    onChange={(e) => handleFilterChange('confidence', e.target.value)}
+                    placeholder="Search"
+                    variant="standard"
+                  />
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
