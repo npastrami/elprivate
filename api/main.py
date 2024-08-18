@@ -203,28 +203,40 @@ async def approve_document():
 async def generate_final_docs():
     data = await request.get_json()
     client_id = data.get('client_id')
-    print(f"Generating final docs for client_id: {client_id}")
+    doc_names = data.get('doc_names', [])
+    print(f"list of doc_name to print: {doc_names}")
+    
+    print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
     catcher = Catcher('approved-docs')  # Specify the Azure Blob Storage container for final docs
     db = DapDatabase(client_id, None)
-
-    approved_docs = await db.get_documents_for_review(client_id)
-    # print(f"Approved docs: {approved_docs}")
     
     final_urls = []
     
-    for doc in approved_docs:
-        print(f"Processing document: {doc['doc_name']} with status {doc['doc_status']}")
-        if doc['doc_status'] == 'reviewed':
-            doc_name = os.path.basename(doc['doc_url'])
-            print(f"Document name for processing: {doc_name}")
-            field_data = {doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']} for doc in approved_docs if doc['doc_name'] == doc_name}
-            print(f"Field data to be uploaded: {field_data}")
+    approved_docs = await db.get_documents_for_review(client_id)
+    # print(f"Approved docs: {approved_docs}")
+    
+    # Iterate over each document name from the client
+    for doc_name in doc_names:
+        # Filter the approved documents to match the current doc_name
+        matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
+        
+        # If there are matching documents, process them
+        if matching_docs:
+            # Create a dictionary for field data from the matched documents
+            field_data = {
+                doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
+                for doc in matching_docs
+            }
+            
+            # Upload the final document once
             final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
-            print(final_url)
+            print(f"final_url for {doc_name}: {final_url}")
             final_urls.append(final_url)
-    
+        else:
+            print(f"No matching documents found for {doc_name}.")
+
     await db.close()
-    
+
     return jsonify({"final_docs": final_urls})
 
 @app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])

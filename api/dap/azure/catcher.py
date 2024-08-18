@@ -23,7 +23,7 @@ class Catcher:
 
         # Generate CSV content with field names and values
         csv_content = self.generate_csv_content(doc_name, field_data)
-        print(f"Generated CSV content: {csv_content}")
+        # print(f"Generated CSV content: {csv_content}")
 
         # Upload the CSV content to Azure Blob Storage
         blob_client = blob_container_client.get_blob_client(blob_name)
@@ -43,12 +43,12 @@ class Catcher:
         print(f"Generated SAS URL: {blob_url}")
 
         database = DapDatabase(client_id, blob_url)
-        print(f"Saving approved document with data: {field_data}")
+        # print(f"Saving approved document with data: {field_data}")
         await database.save_approved_document(client_id, doc_name, blob_url, field_data)
         await database.close()
         print(f"Saved approved document to database.")
 
-        blob_url
+        return blob_url
 
     def generate_csv_content(self, doc_name, field_data):
         # Initialize CSV output in memory

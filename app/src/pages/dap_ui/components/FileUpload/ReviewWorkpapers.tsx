@@ -220,19 +220,41 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   };
 
   const generateFinalDocs = async () => {
-    const response = await fetch('http://127.0.0.1:8080/api/generate_final_docs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ client_id: clientID }),  // Use clientID from context
-    });
-    const data = await response.json();
+    // Filter out the documents with the status "reviewed"
+    const reviewedDocs = workpapers.filter(doc => doc.approved);
 
-    if (data.final_docs) {
-      alert("Final documents generated successfully!");
-    } else {
-      alert("Failed to generate final documents.");
+    if (reviewedDocs.length === 0) {
+        alert("No reviewed documents found to generate final docs.");
+        return;
+    }
+
+    // Extract the document names from the reviewed documents
+    const docNames = reviewedDocs
+        .map(doc => doc.doc_name)
+        .filter((value, index, self) => self.indexOf(value) === index);
+
+    try {
+        // Send a single request with all the unique reviewed document names
+        const response = await fetch('http://127.0.0.1:8080/api/generate_final_docs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                client_id: clientID,  // Use clientID from context
+                doc_names: docNames   // Send the array of unique reviewed document names
+            }),
+        });
+
+        if (response.ok) {
+            alert("Final documents generation completed successfully.");
+        } else {
+            console.error("Failed to process some documents.");
+            alert("Failed to generate some final documents.");
+        }
+    } catch (error) {
+        console.error("Error generating final docs:", error);
+        alert("An error occurred while generating final documents.");
     }
   };
 
