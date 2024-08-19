@@ -204,34 +204,38 @@ async def generate_final_docs():
     data = await request.get_json()
     client_id = data.get('client_id')
     doc_names = data.get('doc_names', [])
+    send_to_catcher = data.get('send_to_catcher', False)
     print(f"list of doc_name to print: {doc_names}")
     
     print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
-    catcher = Catcher('approved-docs')  # Specify the Azure Blob Storage container for final docs
+    catcher = Catcher('approved-docs')
     db = DapDatabase(client_id, None)
-    
+
     final_urls = []
-    
+
     approved_docs = await db.get_documents_for_review(client_id)
-    # print(f"Approved docs: {approved_docs}")
-    
-    # Iterate over each document name from the client
+
     for doc_name in doc_names:
-        # Filter the approved documents to match the current doc_name
         matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
         
-        # If there are matching documents, process them
         if matching_docs:
-            # Create a dictionary for field data from the matched documents
             field_data = {
                 doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
                 for doc in matching_docs
             }
             
-            # Upload the final document once
-            final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
-            print(f"final_url for {doc_name}: {final_url}")
-            final_urls.append(final_url)
+            if send_to_catcher:
+                print("sending to catcher")
+                final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
+                print(f"final_url for {doc_name}: {final_url}")
+                final_urls.append(final_url)
+            else:
+                # Save to approved_docs database without uploading to Catcher
+                final_url = None
+                print("skipping the catcher")
+                last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
+                print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
+                final_urls.append(f"Saved to database with ID: {last_inserted_id}")
         else:
             print(f"No matching documents found for {doc_name}.")
 

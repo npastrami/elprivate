@@ -31,6 +31,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
   const [filters, setFilters] = useState<{ [key in keyof Workpaper]?: string }>({});
   const [hideNoneValues, setHideNoneValues] = useState<boolean>(false); // New toggle state for hiding None values
+  const [sendToCatcher, setSendToCatcher] = useState<boolean>(false);
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
@@ -242,7 +243,8 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
             },
             body: JSON.stringify({
                 client_id: clientID,  // Use clientID from context
-                doc_names: docNames   // Send the array of unique reviewed document names
+                doc_names: docNames,  // Send the array of unique reviewed document 
+                send_to_catcher: sendToCatcher
             }),
         });
 
@@ -385,6 +387,16 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
         <Button variant="contained" onClick={generateFinalDocs}>
           Generate Final Docs
         </Button>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={sendToCatcher}
+              onChange={(e) => setSendToCatcher(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="Send to Catcher"
+        />
       </div>
       <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
         {workpapers.length > 0 && (
