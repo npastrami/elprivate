@@ -26,9 +26,9 @@ class Catcher:
         # print(f"Generated CSV content: {csv_content}")
 
         # Upload the CSV content to Azure Blob Storage
-        blob_client = blob_container_client.get_blob_client(blob_name)
-        await blob_client.upload_blob(csv_content.encode('utf-8'), overwrite=True)
-        print(f"Uploaded CSV to blob: {blob_name}")
+        async with blob_container_client.get_blob_client(blob_name) as blob_client:
+            await blob_client.upload_blob(csv_content.encode('utf-8'), overwrite=True)
+            print(f"Uploaded CSV to blob: {blob_name}")
 
         # Generate a SAS URL for the blob
         sas_token = generate_blob_sas(
