@@ -160,16 +160,25 @@ class DapDatabase:
 
         return doc_url
     
-    async def approve_document(self, client_id, doc_name):
+    # async def approve_document(self, client_id, doc_name):
+    #     await self.ensure_connected()
+    #     print(f"Connected to database. Saving document {doc_name} for client {client_id}.")
+    #     query = """
+    #     UPDATE client_docs 
+    #     SET doc_status = 'reviewed' 
+    #     WHERE doc_name = $1 AND client_id = $2;
+    #     """
+    #     result = await self.conn.execute(query, client_id, doc_name)
+    #     print(f"Update result: {result}")
+        
+    async def update_field_value(self, client_id, doc_name, field_name, field_value):
         await self.ensure_connected()
-        print(f"Connected to database. Saving document {doc_name} for client {client_id}.")
         query = """
-        UPDATE client_docs 
-        SET doc_status = 'reviewed' 
-        WHERE doc_name = $1 AND client_id = $2;
+        UPDATE extracted_fields
+        SET field_value = $1
+        WHERE client_id = $2 AND doc_name = $3 AND field_name = $4;
         """
-        result = await self.conn.execute(query, client_id, doc_name)
-        print(f"Update result: {result}")
+        await self.conn.execute(query, field_value, client_id, doc_name, field_name)
         
     async def update_review_status(self, doc_name, client_id, new_status):
         await self.ensure_connected()
