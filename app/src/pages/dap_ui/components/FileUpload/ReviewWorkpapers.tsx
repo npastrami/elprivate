@@ -32,6 +32,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const [filters, setFilters] = useState<{ [key in keyof Workpaper]?: string }>({});
   const [hideNoneValues, setHideNoneValues] = useState<boolean>(false); // New toggle state for hiding None values
   const [sendToCatcher, setSendToCatcher] = useState<boolean>(false);
+  const [editedFieldsState, setEditedFieldsState] = useState<{ [key: string]: { field_name: string; field_value: string }[] }>({});
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
@@ -178,38 +179,76 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const handleFieldValueChange = (index: number, newValue: string) => {
     const updatedWorkpapers = [...filteredWorkpapers];
     updatedWorkpapers[index].field_value = newValue;
+
     setFilteredWorkpapers(updatedWorkpapers);
+
+    const docUUID = updatedWorkpapers[index].uuid;
+    const fieldName = updatedWorkpapers[index].field_name;
+
+    setEditedFieldsState(prevState => {
+        const updatedDocFields = prevState[docUUID] || [];
+
+        // Check if the field is already in the edited fields for this document
+        const existingFieldIndex = updatedDocFields.findIndex(field => field.field_name === fieldName);
+
+        if (existingFieldIndex !== -1) {
+            // Update the existing field's value
+            updatedDocFields[existingFieldIndex].field_value = newValue;
+        } else {
+            // Add the new field
+            updatedDocFields.push({
+                field_name: fieldName,
+                field_value: newValue
+            });
+        }
+
+        return {
+            ...prevState,
+            [docUUID]: updatedDocFields
+        };
+    });
   };
 
   const handleApproveDocument = async () => {
     const updatedWorkpapers = [...workpapers];
     const isCurrentlyApproved = updatedWorkpapers[currentDocIndex].approved;
     updatedWorkpapers[currentDocIndex].approved = !isCurrentlyApproved;
-  
-    console.log(`Toggling approval for document: ${updatedWorkpapers[currentDocIndex].doc_name} to ${!isCurrentlyApproved ? "reviewed" : "extracted"}`);
-  
+
+    const docUUID = updatedWorkpapers[currentDocIndex].uuid;
+
+    // Retrieve edited fields for this document
+    const editedFields = editedFieldsState[docUUID] || [];
+
     try {
-      const response = await fetch('http://127.0.0.1:8080/api/approve_document', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          doc_name: updatedWorkpapers[currentDocIndex].doc_name,
-          client_id: clientID,  // Use clientID from context
-          approved: !isCurrentlyApproved,  // Send the new approval status
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-  
-      console.log(`Document approval status updated: ${updatedWorkpapers[currentDocIndex].approved}`);
-      setWorkpapers(updatedWorkpapers);
+        const response = await fetch('http://127.0.0.1:8080/api/approve_document', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                doc_name: updatedWorkpapers[currentDocIndex].doc_name,
+                client_id: clientID,  // Use clientID from context
+                approved: !isCurrentlyApproved,  // Send the new approval status
+                edited_fields: editedFields  // Send the edited fields
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        // Remove this document's edits from the tracking state after successful approval
+        setEditedFieldsState(prevState => {
+            const updatedState = { ...prevState };
+            delete updatedState[docUUID];
+            return updatedState;
+        });
+
+        console.log(`Document approval status updated: ${updatedWorkpapers[currentDocIndex].approved}`);
+        setWorkpapers(updatedWorkpapers);
     } catch (error) {
-      console.error('Error approving document:', error);
-      alert('Failed to approve document.');
+        console.error('Error approving document:', error);
+        alert('Failed to approve document.');
     }
   };
 

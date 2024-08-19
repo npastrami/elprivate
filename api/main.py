@@ -188,13 +188,25 @@ async def approve_document():
     doc_name = data.get('doc_name')
     client_id = data.get('client_id')
     approved = data.get('approved')  # Get the approved status from the request
+    edited_fields = data.get('edited_fields', [])  # Get the edited fields from the request
+    print("edited fields: ", edited_fields)
 
     if not doc_name or not client_id:
         return jsonify({"error": "Missing doc_name or client_id"}), 400
 
     db = DapDatabase(None, None)
     new_status = 'reviewed' if approved else 'extracted'
-    await db.update_review_status(doc_name, client_id, new_status)  # Update the status
+
+    # Update the status of the document
+    await db.update_review_status(doc_name, client_id, new_status)
+
+    # Update the edited fields in the database
+    for field in edited_fields:
+        field_name = field.get('field_name')
+        field_value = field.get('field_value')
+        if field_name and field_value is not None:
+            await db.update_field_value(client_id, doc_name, field_name, field_value)
+
     await db.close()
 
     return jsonify({"status": "success", "new_status": new_status})
