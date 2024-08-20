@@ -11,7 +11,9 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { JobContext } from '../JobInput/JobContext';  // Import the JobContext
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
-interface ReviewWorkpapersProps {}
+interface ReviewWorkpapersProps {
+  clientId: string; 
+}
 
 interface Workpaper extends ClientDoc {
   uuid: string;
@@ -453,7 +455,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
               <div style={{
                 position: 'absolute',
                 top: '8px',
-                left: '8px',
+                right: '8px',
                 backgroundColor: 'white',
                 color: '#4287f5',
                 padding: '4px 8px',

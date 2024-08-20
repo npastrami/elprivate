@@ -2,13 +2,12 @@ import React, { Component } from "react";
 import { Navigate } from "react-router-dom";
 import AuthService from "../services/auth.service";
 import IUser from "../types/user.type";
-import { Stack, Text, YStack, Card } from 'tamagui';
+import { Stack, Text, YStack, Card, Button, XStack } from 'tamagui';
 import { FileUpload } from './dap_ui/components/FileUpload/index';
 import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
-
 
 type Props = {};
 
@@ -16,7 +15,8 @@ type State = {
   redirect: string | null,
   userReady: boolean,
   currentUser: IUser & { accessToken: string },
-  shadowStyle: { left: number, top: number, opacity: number }
+  shadowStyle: { left: number, top: number, opacity: number },
+  activeTab: string
 }
 
 export default class Profile extends Component<Props, State> {
@@ -27,7 +27,8 @@ export default class Profile extends Component<Props, State> {
       redirect: null,
       userReady: false,
       currentUser: AuthService.getCurrentUser(),
-      shadowStyle: { left: 0, top: 0, opacity: 0 }
+      shadowStyle: { left: 0, top: 0, opacity: 0 },
+      activeTab: "upload"  // Default to "upload"
     };
   }
 
@@ -71,16 +72,18 @@ export default class Profile extends Component<Props, State> {
     };
   }
 
-  render() {
-    if (this.state.redirect) {
-      return <Navigate to={this.state.redirect} />;
-    }
+  handleTabClick = (tab: string) => {
+    this.setState({ activeTab: tab });
+  }
 
-    const { currentUser, userReady, shadowStyle } = this.state;
+  renderContent() {
+    const { currentUser, userReady, activeTab } = this.state;
 
-    return (
-      <YStack padding="$4" space="$4" alignItems="center">
-        {userReady ? (
+    if (!userReady) return null;
+
+    switch (activeTab) {
+      case "settings":
+        return (
           <Card backgroundColor="$gray9" padding="$4" borderRadius="$4" width="100%">
             <YStack space="$4">
               <Stack>
@@ -101,64 +104,112 @@ export default class Profile extends Component<Props, State> {
                 <strong>Authorities:</strong>
               </Text>
               <YStack space="$2">
-                {currentUser.roles && currentUser.roles.map((role, index) => (
+                {currentUser.roles?.map((role, index) => (
                   <Text key={index}>- {role}</Text>
                 ))}
               </YStack>
-
-              {/* Shadow Box */}
-              <Stack
-                id="shadow-box"
-                style={{
-                  position: 'absolute',
-                  width: '85px',
-                  height: '30px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  borderRadius: '5px',
-                  filter: 'blur(10px)',
-                  pointerEvents: 'none',
-                  transition: 'left 0.3s ease-out, top 0.3s ease-out, opacity 0.2s ease-out',
-                  ...shadowStyle,
-                }}
-              ></Stack>
-
-              <Text
-                id="title"
-                style={{
-                  color: '#1338BE',
-                  textAlign: 'center',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 'bold',
-                  position: 'relative',
-                  zIndex: 1,
-                  marginBottom: '20px',
-                }}
-              >
-                Enrique's Customs
-              </Text>
-
-              {/* Document Automation UI Components */}
-              <JobProvider>
-                <YStack space="$4">
-                  <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
-                    <JobInput />
-                  </Card>
-                  {currentUser.roles && currentUser.roles.includes('ROLE_ADMIN') && (
-                    <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
-                      <h3>Review Workpapers</h3>
-                      <ReviewWorkpapers clientId={currentUser.id} />
-                    </Card>
-                  )}
-                  <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
-                    <FileUpload />
-                  </Card>
-                </YStack>
-                <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
-                  <ClientDataTable />
-                </Card>
-              </JobProvider>
             </YStack>
           </Card>
+        );
+
+      case "upload":
+        return (
+          <JobProvider>
+            <YStack space="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+                <JobInput />
+              </Card>
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+                <FileUpload />
+              </Card>
+            </YStack>
+          </JobProvider>
+        );
+
+      case "review":
+        return currentUser.roles?.includes('ROLE_ADMIN') ? (
+          <JobProvider>
+            <YStack space="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+                <JobInput />
+              </Card>
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+                <h3>Review Workpapers</h3>
+                <ReviewWorkpapers clientId={currentUser.id} />
+              </Card>
+            </YStack>
+          </JobProvider>
+        ) : <Text>Under Construction</Text>;
+
+      case "schedule":
+        return (
+          <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+            <JobInput />
+            <ClientDataTable />
+          </Card>
+        );
+
+      case "results":
+      case "billing":
+      case "setup":
+        return <Text>Under Construction</Text>;
+
+      default:
+        return <Text>Invalid Tab</Text>;
+    }
+  }
+
+  render() {
+    if (this.state.redirect) {
+      return <Navigate to={this.state.redirect} />;
+    }
+
+    const { currentUser, shadowStyle } = this.state;
+
+    return (
+      <YStack padding="$4" space="$4" alignItems="center">
+        {this.state.userReady ? (
+          <>
+            <nav style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+              <XStack space="$2">
+                {currentUser.roles?.includes('ROLE_ADMIN') ? (
+                  <>
+                    <Button onPress={() => this.handleTabClick("settings")} style={{ borderRadius: 0, padding: '10px 20px' }}>Settings</Button>
+                    <Button onPress={() => this.handleTabClick("upload")} style={{ borderRadius: 0, padding: '10px 20px' }}>Upload</Button>
+                    <Button onPress={() => this.handleTabClick("review")} style={{ borderRadius: 0, padding: '10px 20px' }}>Review</Button>
+                    <Button onPress={() => this.handleTabClick("schedule")} style={{ borderRadius: 0, padding: '10px 20px' }}>Schedule</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button onPress={() => this.handleTabClick("setup")} style={{ borderRadius: 0, padding: '10px 20px' }}>Setup</Button>
+                    <Button onPress={() => this.handleTabClick("settings")} style={{ borderRadius: 0, padding: '10px 20px' }}>Settings</Button>
+                    <Button onPress={() => this.handleTabClick("upload")} style={{ borderRadius: 0, padding: '10px 20px' }}>Upload</Button>
+                    <Button onPress={() => this.handleTabClick("results")} style={{ borderRadius: 0, padding: '10px 20px' }}>Results</Button>
+                    <Button onPress={() => this.handleTabClick("billing")} style={{ borderRadius: 0, padding: '10px 20px' }}>Billing</Button>
+                  </>
+                )}
+              </XStack>
+            </nav>
+
+            {/* Shadow Box */}
+            <Stack
+              id="shadow-box"
+              style={{
+                position: 'absolute',
+                width: '85px',
+                height: '30px',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                borderRadius: '5px',
+                filter: 'blur(10px)',
+                pointerEvents: 'none',
+                transition: 'left 0.3s ease-out, top 0.3s ease-out, opacity 0.2s ease-out',
+                ...shadowStyle,
+              }}
+            ></Stack>
+
+            {/* Render Content Based on Tab */}
+            {this.renderContent()}
+          </>
         ) : null}
       </YStack>
     );
