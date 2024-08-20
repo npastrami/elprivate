@@ -5,7 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { JobContext } from '../JobInput/JobContext';  // Import the JobContext
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface ReviewWorkpapersProps {}
 
@@ -300,8 +304,8 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   };
 
   return (
-    <div style={{ display: 'flex', maxHeight: '1200px', width: '100%' }}>
-      <div style={{ flex: 1, width: '50%', maxHeight: '800px', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', maxHeight: '1000px', width: '100%' }}>
+      <div style={{ flex: 1, width: '50%', maxHeight: '800px', maxWidth: '1000px', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <IconButton onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
             <ArrowBackIosIcon />
@@ -348,7 +352,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
           label="Hide None Values"
           style={{ marginBottom: '8px' }}
         />
-        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '100%' }}>
+        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '100%', maxWidth: '1000px', maxHeight: '500px' }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -437,7 +441,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
           label="Send to Catcher"
         />
       </div>
-      <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+      <div style={{ flex: 1, marginLeft: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', maxHeight: '700px', maxWidth: '670px', }}>
         {workpapers.length > 0 && (
           <div style={{ marginBottom: '8px' }}>
             <strong>Document: {workpapers[currentDocIndex]?.doc_name}</strong>
@@ -459,7 +463,55 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                 Approved
               </div>
             )}
-            <img src={docImage} alt="Document" style={{ width: 'auto', height: '800px', maxWidth: '80%' }} />
+            <TransformWrapper
+              initialScale={1}
+              initialPositionX={0}
+              initialPositionY={0}
+              wheel={{ step: 0.1 }}
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+                  <div
+                    className="tools"
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      display: 'flex',
+                      gap: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      zIndex: 10,
+                    }}
+                  >
+                    <IconButton
+                      onClick={() => zoomIn()}
+                      style={{ backgroundColor: '#f0f0f0' }}
+                    >
+                      <ZoomInIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => zoomOut()}
+                      style={{ backgroundColor: '#f0f0f0' }}
+                    >
+                      <ZoomOutIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => resetTransform()}
+                      style={{ backgroundColor: '#f0f0f0' }}
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                  </div>
+                  <div style={{ overflow: 'auto', width: '100%', height: '100%' }}>
+                    <TransformComponent>
+                      <img src={docImage} alt="Document" style={{ width: '70%', height: '100%' }} />
+                    </TransformComponent>
+                  </div>
+                </>
+              )}
+            </TransformWrapper>
           </div>
         )}
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
