@@ -63,3 +63,33 @@ async def signin():
         }), 200
     else:
         return jsonify({"message": "Invalid login credentials"}), 401
+    
+@auth_controller.route('/update', methods=['PUT'])
+async def update_user():
+    data = await request.get_json()
+    user_id = data.get('id')
+    new_username = data.get('username')
+    new_email = data.get('email')
+    
+    user = await User.get_or_none(id=user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    
+    #Check if username or email already exists for other users
+    existing_username = await User.get_or_none(username=new_username).exclude(id=user_id)
+    if existing_username:
+        return jsonify({"message": "Username already exists."}), 400
+    
+    existing_email = await User.get_or_none(email=new_email).exclude(id=user_id)
+    if existing_email:
+        return jsonify({"message": "Email already exists."}), 400
+    
+    # Update the user's informatoin
+    user.username = new_username
+    user.email = new_email
+    
+    try:
+        await user.save()
+        return jsonify({"message": "User updated successfully", "username": new_username, "email": new_email}), 200
+    except IntegrityError:
+        return jsonify({"message": "Error updaing user."}), 500

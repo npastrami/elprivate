@@ -7,6 +7,7 @@ import { FileUpload } from './dap_ui/components/FileUpload/index';
 import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
+import Settings from './dap_ui/components/Profile/settings';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
 
 type Props = {};
@@ -76,6 +77,11 @@ export default class Profile extends Component<Props, State> {
     this.setState({ activeTab: tab });
   }
 
+  handleUpdateUser = (updatedUser: IUser & { accessToken: string }) => {
+    this.setState({ currentUser: updatedUser });
+  }
+  
+
   renderContent() {
     const { currentUser, userReady, activeTab } = this.state;
 
@@ -84,32 +90,7 @@ export default class Profile extends Component<Props, State> {
     switch (activeTab) {
       case "settings":
         return (
-          <Card backgroundColor="$gray9" padding="$4" borderRadius="$4" width="100%">
-            <YStack space="$4">
-              <Stack>
-                <Text fontSize="$6" fontWeight="bold">
-                  <strong>{currentUser.username}</strong> Profile
-                </Text>
-              </Stack>
-              <Text>
-                <strong>Token:</strong> {currentUser.accessToken.substring(0, 20)} ... {currentUser.accessToken.substring(currentUser.accessToken.length - 20)}
-              </Text>
-              <Text>
-                <strong>Id:</strong> {currentUser.id}
-              </Text>
-              <Text>
-                <strong>Email:</strong> {currentUser.email}
-              </Text>
-              <Text>
-                <strong>Authorities:</strong>
-              </Text>
-              <YStack space="$2">
-                {currentUser.roles?.map((role, index) => (
-                  <Text key={index}>- {role}</Text>
-                ))}
-              </YStack>
-            </YStack>
-          </Card>
+          <Settings currentUser={currentUser} onUpdateUser={this.handleUpdateUser} />
         );
 
       case "upload":
