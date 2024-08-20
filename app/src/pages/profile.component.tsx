@@ -116,7 +116,7 @@ export default class Profile extends Component<Props, State> {
         return (
           <JobProvider>
             <YStack space="$4">
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
                 <JobInput />
               </Card>
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
@@ -130,7 +130,7 @@ export default class Profile extends Component<Props, State> {
         return currentUser.roles?.includes('ROLE_ADMIN') ? (
           <JobProvider>
             <YStack space="$4">
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
                 <JobInput />
               </Card>
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
@@ -143,10 +143,29 @@ export default class Profile extends Component<Props, State> {
 
       case "schedule":
         return (
-          <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
-            <JobInput />
-            <ClientDataTable />
-          </Card>
+          <JobProvider>
+            <Card
+              padding="$4"
+              backgroundColor="$gray7"
+              borderRadius="$4"
+              style={{
+                maxHeight: '800px',
+                minHeight: '400px', // Ensure the card has a minimum height
+                minWidth: '600px',  // Set a minimum width for the card
+                overflowY: 'auto',
+                paddingTop: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div style={{ flexGrow: 0 }}>
+                <JobInput />
+              </div>
+              <div style={{ flexGrow: 1 }}>
+                <ClientDataTable />
+              </div>
+            </Card>
+          </JobProvider>
         );
 
       case "results":
