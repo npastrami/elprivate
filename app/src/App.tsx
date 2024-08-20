@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { Stack, YStack, XStack, Button, TamaguiProvider } from 'tamagui';
+import Particles from "react-tsparticles";
+import { loadFull } from "tsparticles";
 import './App.css';
 
 import AuthService from "./services/auth.service";
@@ -69,72 +71,156 @@ class App extends Component<Props, State> {
   render() {
     const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
 
+    const particlesInit = async (main: any) => {
+      await loadFull(main);
+    };
+
     return (
       <TamaguiProvider config={tamaguiConfig}>
-        <Stack space className="app-background">
-          <YStack backgroundColor="$darkGrey" padding="$3" height={80} justifyContent="center">
-            <XStack justifyContent="space-between" alignItems="center">
-              <Link to="/" style={{ textDecoration: 'none' }}>
-                <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" fontWeight="bold" >Enrique Customs</Button>
-              </Link>
-              <XStack space="$3">
-                <Link to="/home" style={{ textDecoration: 'none' }}>
-                  <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Home</Button>
+        <div className="app-background">
+          {/* Particle.js Background */}
+          <Particles
+            id="tsparticles"
+            init={particlesInit}
+            options={{
+              background: {
+                color: {
+                  value: "#000000",
+                },
+              },
+              fpsLimit: 60,
+              interactivity: {
+                events: {
+                  onClick: {
+                    enable: true,
+                    mode: "push",
+                  },
+                  onHover: {
+                    enable: true,
+                    mode: "repulse",
+                  },
+                  resize: true,
+                },
+                modes: {
+                  push: {
+                    quantity: 4,
+                  },
+                  repulse: {
+                    distance: 100,
+                    duration: 0.4,
+                  },
+                },
+              },
+              particles: {
+                color: {
+                  value: "#ffffff",
+                },
+                links: {
+                  color: "#ffffff",
+                  distance: 150,
+                  enable: true,
+                  opacity: 0.5,
+                  width: 1,
+                },
+                collisions: {
+                  enable: true,
+                },
+                move: {
+                  direction: "none",
+                  enable: true,
+                  outModes: {
+                    default: "bounce",
+                  },
+                  random: false,
+                  speed: 1,
+                  straight: false,
+                },
+                number: {
+                  density: {
+                    enable: true,
+                    area: 800,
+                  },
+                  value: 80,
+                },
+                opacity: {
+                  value: 0.5,
+                },
+                shape: {
+                  type: "circle",
+                },
+                size: {
+                  value: { min: 1, max: 5 },
+                },
+              },
+              detectRetina: true,
+            }}
+          />
+
+          <Stack space>
+            <YStack backgroundColor="$darkGrey" padding="$3" height={80} justifyContent="center">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Link to="/" style={{ textDecoration: 'none' }}>
+                  <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" fontWeight="bold" >Enrique Customs</Button>
                 </Link>
-
-                {showModeratorBoard && (
-                  <Link to="/mod" style={{ textDecoration: 'none' }}>
-                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Moderator Board</Button>
+                <XStack space="$3">
+                  <Link to="/home" style={{ textDecoration: 'none' }}>
+                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Home</Button>
                   </Link>
-                )}
 
-                {showAdminBoard && (
-                  <Link to="/admin" style={{ textDecoration: 'none' }}>
-                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Admin Board</Button>
-                  </Link>
-                )}
+                  {showModeratorBoard && (
+                    <Link to="/mod" style={{ textDecoration: 'none' }}>
+                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Moderator Board</Button>
+                    </Link>
+                  )}
 
-                {currentUser && (
-                  <Link to="/user" style={{ textDecoration: 'none' }}>
-                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">User</Button>
-                  </Link>
-                )}
+                  {showAdminBoard && (
+                    <Link to="/admin" style={{ textDecoration: 'none' }}>
+                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Admin Board</Button>
+                    </Link>
+                  )}
+
+                  {currentUser && (
+                    <Link to="/user" style={{ textDecoration: 'none' }}>
+                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">User</Button>
+                    </Link>
+                  )}
+                </XStack>
+                <XStack space="$3">
+                  {currentUser ? (
+                    <>
+                      <Link to="/profile" style={{ textDecoration: 'none' }}>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">{currentUser.username}</Button>
+                      </Link>
+                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" onPress={this.logOut}>LogOut</Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" style={{ textDecoration: 'none' }}>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Login</Button>
+                      </Link>
+                      <Link to="/signup" style={{ textDecoration: 'none' }}>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Sign Up</Button>
+                      </Link>
+                    </>
+                  )}
+                </XStack>
               </XStack>
-              <XStack space="$3">
-                {currentUser ? (
-                  <>
-                    <Link to="/profile" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">{currentUser.username}</Button>
-                    </Link>
-                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" onPress={this.logOut}>LogOut</Button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Login</Button>
-                    </Link>
-                    <Link to="/signup" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Sign Up</Button>
-                    </Link>
-                  </>
-                )}
-              </XStack>
-            </XStack>
-          </YStack>
+            </YStack>
 
-          <Stack padding="$3">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Login onLogin={this.handleLogin}/>} />
-              <Route path="/signup" element={<Register />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/user" element={<BoardUser />} />
-              <Route path="/mod" element={<BoardModerator />} />
-              <Route path="/admin" element={<BoardAdmin />} />
-            </Routes>
+            <Stack padding="$3">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/login" element={<Login onLogin={this.handleLogin}/>} />
+                <Route path="/signup" element={<Register />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/user" element={<BoardUser />} />
+                <Route path="/mod" element={<BoardModerator />} />
+                <Route path="/admin" element={<BoardAdmin />} />
+              </Routes>
+            </Stack>
           </Stack>
-        </Stack>
+        </div>
       </TamaguiProvider>
     );
   }

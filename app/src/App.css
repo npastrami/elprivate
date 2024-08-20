@@ -35,7 +35,8 @@ body, html, #root, .app-background {
   height: 100%;
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: url('minshards3.jpg') no-repeat center center fixed;
   background-size: 100%;
   background-position: center calc(50% + 60px);
+  position: relative; /* Ensure position relative for proper stacking */
+  overflow: hidden; /* Hide overflow to contain particles */
 }
