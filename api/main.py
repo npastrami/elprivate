@@ -32,14 +32,16 @@ from accounts.models.role_model import Role
 from accounts.routes.auth_routes import auth_routes
 from accounts.routes.user_routes import user_routes
 from accounts.controllers.user_controller import user_controller
+from accounts.controllers.auth_controller import auth_controller
 import os
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
-app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POST", "OPTIONS", "PUT"], allow_headers=["Content-Type", "Authorization"])
 app.register_blueprint(auth_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(user_controller, url_prefix='/api', allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+app.register_blueprint(auth_controller, url_prefix='/api/auth')
 
 db_instance = None
 

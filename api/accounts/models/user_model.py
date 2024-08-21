@@ -5,6 +5,7 @@ class User(models.Model):
     username = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255)
     password = fields.CharField(max_length=255)
+    email_verified = fields.BooleanField(default=False)  
     # Establishing a many-to-many relationship to Role
     roles = fields.ManyToManyField(
         'myapp.Role',  # This refers to the Role model
