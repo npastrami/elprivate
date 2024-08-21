@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import Modal from 'react-modal';
 import { Card, YStack, Stack, Text, Input } from 'tamagui';
 import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
 import IUser from '../../../../types/user.type';
+import authService from '../../../../services/auth.service';
 import axios from 'axios';
 import { blue } from '@mui/material/colors';
 import { Button as MUIButton } from '@mui/material';
@@ -15,11 +17,12 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
   const [username, setUsername] = useState(currentUser.username || '');
   const [email, setEmail] = useState(currentUser.email || '');
-  const [password, setPassword] = useState(''); // Add state for password
+  const [password, setPassword] = useState('');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [isEditingPassword, setIsEditingPassword] = useState(false); // Add state for password editing
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const handleSaveChanges = async () => {
     setLoading(true);
@@ -28,7 +31,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
         ...currentUser,
         username,
         email,
-        password: isEditingPassword ? password : undefined, // Only send password if it was edited
+        password: isEditingPassword ? password : undefined,
       };
 
       const response = await axios.put(
@@ -47,18 +50,21 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
       );
 
       if (response.data) {
-        const updatedUserData = { ...updatedUser, accessToken: currentUser.accessToken };
-        localStorage.setItem('user', JSON.stringify(updatedUserData));
-        onUpdateUser(updatedUserData);
-        alert('Profile updated successfully!');
+        setShowModal(false);  // Close modal
+        authService.logout();
+        window.location.href = '/login';
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
       alert('Failed to update profile.');
     } finally {
       setLoading(false);
-      setIsEditingPassword(false); // Reset password editing state
+      setIsEditingPassword(false);
     }
+  };
+
+  const confirmSaveChanges = () => {
+    setShowModal(true); // Show the confirmation modal
   };
 
   const maskValue = (value: string) => {
@@ -107,7 +113,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
           <Input
             placeholder="Username"
             value={isEditingUsername ? username : maskValue(username)}
-            onChangeText={(value) => setUsername(value ?? '')} // Handle null or undefined values
+            onChangeText={(value) => setUsername(value ?? '')}
             disabled={!isEditingUsername}
           />
           <IconButton onClick={() => setIsEditingUsername(!isEditingUsername)}>
@@ -119,7 +125,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
           <Input
             placeholder="Email"
             value={isEditingEmail ? email : maskValue(email)}
-            onChangeText={(value) => setEmail(value ?? '')} // Handle null or undefined values
+            onChangeText={(value) => setEmail(value ?? '')}
             disabled={!isEditingEmail}
           />
           <IconButton onClick={() => setIsEditingEmail(!isEditingEmail)}>
@@ -131,7 +137,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
           <Input
             placeholder="********"
             value={isEditingPassword ? password : '********'}
-            onChangeText={(value) => setPassword(value ?? '')} // Handle null or undefined values
+            onChangeText={(value) => setPassword(value ?? '')}
             disabled={!isEditingPassword}
           />
           <IconButton onClick={() => setIsEditingPassword(!isEditingPassword)}>
@@ -141,12 +147,30 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
         <MUIButton
           variant="contained"
           style={{ backgroundColor: blue[500], color: 'white', marginTop: '16px' }}
-          onClick={handleSaveChanges}
+          onClick={confirmSaveChanges}
           disabled={loading}
         >
           {loading ? 'Saving...' : 'Save Changes'}
         </MUIButton>
       </YStack>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={showModal}
+        onRequestClose={() => setShowModal(false)}
+        contentLabel="Confirm Changes"
+      >
+        <h2>Confirm Changes</h2>
+        <p>
+          You will need to confirm these changes via email. Once confirmed, you will be logged out and will need to sign in again.
+        </p>
+        <MUIButton variant="contained" color="primary" onClick={handleSaveChanges}>
+          Confirm
+        </MUIButton>
+        <MUIButton variant="outlined" onClick={() => setShowModal(false)}>
+          Cancel
+        </MUIButton>
+      </Modal>
     </Card>
   );
 };
