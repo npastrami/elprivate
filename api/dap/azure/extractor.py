@@ -28,9 +28,11 @@ class Extractor:
                     if isinstance(field_data, dict):
                         field_value = str(field_data['value'])
                         confidence = field_data['confidence']
+                        bounding_box = json.dumbs(field_data.get('bounding_box', []))
                     else:
                         field_value = str(field_data)
                         confidence = None
+                        bounding_box = None
 
                     # Check if the value is of a custom type and convert it
                     if isinstance(field_value, list):
@@ -46,6 +48,7 @@ class Extractor:
                         field_value=field_value,
                         confidence=confidence,
                         access_id=access_id,
+                        bounding_box=bounding_box,
                     )
                     print(f"Last inserted ID for extraction: {last_inserted_id}")
         except Exception as e:
@@ -97,10 +100,19 @@ class Extractor:
             }
             
         def extract_field_info(field, prefix=''):
-            """Extracts information from a field with value and confidence."""
+            """Extracts information from a field with value, confidence, and bounding box."""
             value = field.get('valueString') or field.get('valueNumber') or field.get('value')
             confidence = field.get('confidence')
-            return {prefix: {'value': value, 'confidence': confidence}}
+            
+            bounding_box = []
+            if field.get('boundingRegions'):
+                for region in field['boundingRegions']:
+                    bounding_box.append({
+                        "pageNumber": region.page_number,
+                        "polygon": region.polygon
+                    })
+            
+            return {prefix: {'value': value, 'confidence': confidence, 'bounding_box': bounding_box}}
 
         def extract_array_info(array, prefix):
             """Extracts information from arrays of additional info, state, and local tax infos."""

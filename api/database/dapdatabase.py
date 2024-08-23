@@ -8,6 +8,7 @@ import datetime
 import dap.credentials as credentials
 import base64
 import json
+import random
 
 class DapDatabase:
     def __init__(self, client_id, doc_url):
@@ -89,21 +90,35 @@ class DapDatabase:
         last_inserted_id = await self.conn.fetchval(insert_query, client_id, doc_url, doc_name, doc_status, doc_type, container_name, access_id)
         return last_inserted_id
     
-    async def post2postgres_extract(self, client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, access_id):
+    async def post2postgres_extract(self, client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, bounding_box, access_id):
         await self.ensure_connected()
-        insert_query = """
-        INSERT INTO extracted_fields (client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, access_id) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;
+
+        # Generate a random hex color code
+        def generate_random_color():
+            return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+        # Ensure the color is unique within the same document
+        existing_colors_query = """
+        SELECT field_color FROM extracted_fields WHERE doc_name = $1 AND client_id = $2;
         """
-        # Use fetchval to execute the query and get the returned value
-        last_inserted_id = await self.conn.fetchval(insert_query, client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, access_id)
+        existing_colors = await self.conn.fetch(existing_colors_query, doc_name, client_id)
+        existing_colors = [record['field_color'] for record in existing_colors]
+
+        new_color = generate_random_color()
+        while new_color in existing_colors:
+            new_color = generate_random_color()
+
+        insert_query = """
+        INSERT INTO extracted_fields (client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, bounding_box, field_color, access_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;
+        """
+        last_inserted_id = await self.conn.fetchval(insert_query, client_id, doc_url, doc_name, doc_status, doc_type, field_name, field_value, confidence, bounding_box, new_color, access_id)
 
         update_status_query = """
         UPDATE client_docs SET doc_status = 'extracted' WHERE client_id = $1 AND doc_url = $2;
         """
-        # Use execute for the update query as it does not return a value
         await self.conn.execute(update_status_query, client_id, doc_url)
-        
+
         return last_inserted_id
     
     async def get_field_values(self, client_id, doc_type):
