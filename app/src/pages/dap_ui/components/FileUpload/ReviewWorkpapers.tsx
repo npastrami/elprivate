@@ -15,12 +15,19 @@ interface ReviewWorkpapersProps {
   clientId: string; 
 }
 
+interface Polygon {
+  polygon: number[];
+  pageNumber: number;
+}
+
 interface Workpaper extends ClientDoc {
   uuid: string;
   field_name: string;
   field_value: string;
   confidence: number;
   doc_url: string;
+  field_color: string;
+  bounding_box: string;
   approved: boolean;  // Track approval status
 }
 
@@ -39,6 +46,8 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   const [hideNoneValues, setHideNoneValues] = useState<boolean>(false); // New toggle state for hiding None values
   const [sendToCatcher, setSendToCatcher] = useState<boolean>(false);
   const [editedFieldsState, setEditedFieldsState] = useState<{ [key: string]: { field_name: string; field_value: string }[] }>({});
+  const [boundingBoxes, setBoundingBoxes] = useState<JSX.Element[]>([])
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   const orderedDocUUIDs = Array.from(new Set(workpapers.map(wp => wp.uuid)));
 
@@ -265,6 +274,78 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     }
   };
 
+  useEffect(() => {
+    const generateBoundingBoxes = () => {
+      if (!filteredWorkpapers || filteredWorkpapers.length === 0) return [];
+  
+      return filteredWorkpapers.map((wp, index) => {
+        let boundingBoxData: Polygon[];
+        try {
+          boundingBoxData = JSON.parse(wp.bounding_box) as Polygon[]; // Parse and assert type
+        } catch (error) {
+          console.warn('Failed to parse bounding box data:', wp.bounding_box);
+          return null;
+        }
+  
+        if (!boundingBoxData || boundingBoxData.length === 0) {
+          console.warn('No bounding box data found for:', wp);
+          return null;
+        }
+  
+        const polygon = boundingBoxData[0].polygon;
+        if (!polygon || polygon.length !== 8) { // Expecting 8 points (4 corners)
+          console.warn('Invalid polygon data:', boundingBoxData);
+          return null;
+        }
+  
+        const imageElement = document.querySelector('img'); // Assuming the document image is the first <img> element
+        if (!imageElement) {
+          console.warn('Image element not found');
+          return null;
+        }
+  
+        const imgWidth = imageElement.clientWidth;
+        const imgHeight = imageElement.clientHeight;
+  
+        const originalWidth = 8.5; // inches
+        const originalHeight = 11; // inches
+  
+        const scaleX = imgWidth / originalWidth;
+        const scaleY = imgHeight / originalHeight;
+  
+        const top = Math.min(polygon[1], polygon[3], polygon[5], polygon[7]) * scaleY;
+        const left = Math.min(polygon[0], polygon[2], polygon[4], polygon[6]) * scaleX;
+        const width = (Math.max(polygon[0], polygon[2], polygon[4], polygon[6]) - left / scaleX) * scaleX;
+        const height = (Math.max(polygon[1], polygon[3], polygon[5], polygon[7]) - top / scaleY) * scaleY;
+  
+        return (
+          <div key={index} onClick={() => setActiveField(prevActiveField => prevActiveField === wp.field_name ? null : wp.field_name)} style={{
+            position: 'absolute',
+            border: `2px solid ${wp.field_color}`,
+            backgroundColor: wp.field_name === activeField ? 'rgba(0, 0, 0, 0.2)' : 'transparent',
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            zIndex: 2
+          }} />
+        );
+      }).filter(Boolean) as JSX.Element[];
+    };
+  
+    const updateBoundingBoxes = () => {
+      const boxes = generateBoundingBoxes();
+      setBoundingBoxes(boxes);
+    };
+  
+    const img = document.querySelector('img');
+    if (img) {
+      img.onload = updateBoundingBoxes;
+    }
+  
+    updateBoundingBoxes(); // Call it directly in case the image is already loaded
+  }, [docImage, currentDocIndex, activeField, workpapers, filteredWorkpapers]);
+
   const generateFinalDocs = async () => {
     // Filter out the documents with the status "reviewed"
     const reviewedDocs = workpapers.filter(doc => doc.approved);
@@ -306,7 +387,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   };
 
   return (
-    <div style={{ display: 'flex', maxHeight: '1000px', width: '100%' }}>
+    <div style={{ display: 'flex', maxHeight: '1000px', width: '100%', overflow: 'hidden' }}>
       <div style={{ flex: 1, width: '50%', maxHeight: '800px', maxWidth: '1000px', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <IconButton onClick={handlePreviousDocument} disabled={currentDocIndex === 0}>
@@ -330,6 +411,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                     margin: '0 4px',
                     padding: '4px',
                     cursor: 'pointer',
+                    overflow: 'hidden'
                   }}
                   onClick={() => handleDocumentClick(uuid)}
                 >
@@ -394,6 +476,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                     variant="standard"
                   />
                 </TableCell>
+                <TableCell>Color</TableCell>
                 <TableCell>
                   <Button onClick={() => handleSort('confidence')}>Confidence</Button>
                   <TextField
@@ -407,7 +490,13 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
             </TableHead>
             <TableBody>
               {filteredWorkpapers.map((workpaper, index) => (
-                <TableRow key={workpaper.uuid + index}>
+                <TableRow
+                  key={workpaper.uuid + index}
+                  onClick={() => setActiveField(workpaper.field_name)} // Set the active field when the row is clicked
+                  style={{
+                    backgroundColor: workpaper.field_name === activeField ? '#f0f0f0' : 'transparent', // Highlight active row
+                  }}
+                >
                   <TableCell>{workpaper.doc_name}</TableCell>
                   <TableCell>{workpaper.approved ? 'Reviewed' : 'Extracted'}</TableCell>
                   <TableCell>{workpaper.field_name}</TableCell>
@@ -418,6 +507,21 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                       variant="outlined"
                       fullWidth
                       disabled={workpapers[currentDocIndex]?.approved}  // Disable input if approved
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering the row click event
+                        setActiveField(prevActiveField => prevActiveField === workpaper.field_name ? null : workpaper.field_name);
+                      }}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        backgroundColor: workpaper.field_color,
+                        border: workpaper.field_name === activeField ? '2px solid black' : 'none', // Highlight active color cube
+                        cursor: 'pointer',
+                      }}
                     />
                   </TableCell>
                   <TableCell>{workpaper.confidence}</TableCell>
@@ -509,6 +613,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                   <div style={{ overflow: 'auto', width: '100%', height: '100%' }}>
                     <TransformComponent>
                       <img src={docImage} alt="Document" style={{ width: '70%', height: '100%' }} />
+                      {boundingBoxes}
                     </TransformComponent>
                   </div>
                 </>

@@ -40,3 +40,28 @@ body, html, #root, .app-background {
   position: relative; /* Ensure position relative for proper stacking */
   overflow: hidden; /* Hide overflow to contain particles */
 }
+
+.app-background {
+  overflow: auto; /* Make the app background scrollable */
+  height: 100vh; /* Ensure it takes up the full viewport height */
+  width: 100%; /* Full width of the page */
+  -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
+}
+
+body {
+  overflow: overlay; /* Prevent content shifting due to scrollbar */
+}
+
+/* Optional: Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 0; /* Hide scrollbar width */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.5); /* Subtle scrollbar thumb */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Transparent scrollbar track */
+}
