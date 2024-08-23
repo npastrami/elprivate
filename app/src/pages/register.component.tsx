@@ -161,7 +161,7 @@ export default class Register extends Component<Props, State> {
                     onBlur={() => this.handleBlur("username", username)}
                     style={{ marginTop: 12 }}
                   />
-                  {usernameError && <Text color="red">{usernameError}</Text>}
+                  {usernameError ? (<Text color="red">{usernameError}</Text>) : null}
 
                   <Label htmlFor="email"></Label>
                   <Input
@@ -173,7 +173,7 @@ export default class Register extends Component<Props, State> {
                     onBlur={() => this.handleBlur("email", email)}
                     style={{ marginTop: 12 }}
                   />
-                  {emailError && <Text color="red">{emailError}</Text>}
+                  {emailError ? (<Text color="red">{emailError}</Text>) : null}
 
                   <Label htmlFor="password"></Label>
                   <Input
@@ -186,7 +186,7 @@ export default class Register extends Component<Props, State> {
                     onBlur={() => this.handleBlur("password", password)}
                     style={{ marginTop: 12 }}
                   />
-                  {passwordError && <Text color="red">{passwordError}</Text>}
+                  {passwordError ? (<Text color="red">{passwordError}</Text>) : null}
 
                   <CustomButton theme="red" disabled={!isFormValid || loading} enabled={isFormValid} style={{ marginTop: 24, borderRadius: 20 }}>
                     {loading ? (
