@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import AuthService from "../services/auth.service";
 import { Stack, Input, Label, Text, YStack, Image, TamaguiProvider } from 'tamagui';
 import { CustomButton } from "../components/CustomButton";
@@ -21,6 +21,7 @@ type State = {
   usernameError: string,
   passwordError: string,
   successful: boolean, // Added successful to the State type
+  forgotPasswordTextColor: string, // New state to track the text color
 };
 
 export default class Login extends Component<Props, State> {
@@ -29,6 +30,8 @@ export default class Login extends Component<Props, State> {
     this.handleLogin = this.handleLogin.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
+    this.handleForgotPasswordHover = this.handleForgotPasswordHover.bind(this);
+    this.handleForgotPasswordOut = this.handleForgotPasswordOut.bind(this);
 
     this.state = {
       redirect: null,
@@ -41,6 +44,7 @@ export default class Login extends Component<Props, State> {
       usernameError: "",
       passwordError: "",
       successful: false, // Initialize successful in the state
+      forgotPasswordTextColor: "grey", // Initialize text color
     };
   }
 
@@ -126,12 +130,20 @@ export default class Login extends Component<Props, State> {
     this.validateFields(name, value);
   }
 
+  handleForgotPasswordHover() {
+    this.setState({ forgotPasswordTextColor: "blue" });
+  }
+
+  handleForgotPasswordOut() {
+    this.setState({ forgotPasswordTextColor: "grey" });
+  }
+
   render() {
     if (this.state.redirect) {
       return <Navigate to={this.state.redirect} />
     }
 
-    const { loading, message, username, password, isUsernameValid, isPasswordValid, usernameError, passwordError, successful } = this.state;
+    const { loading, message, username, password, isUsernameValid, isPasswordValid, usernameError, passwordError, successful, forgotPasswordTextColor } = this.state;
     const isFormValid = isUsernameValid && isPasswordValid;
 
     return (
@@ -174,6 +186,17 @@ export default class Login extends Component<Props, State> {
                     style={{ marginTop: 12 }}
                   />
                   {passwordError ? (<Text color="red">{passwordError}</Text>) : null}
+
+                  <Link to="/forgot" style={{ textDecoration: 'none' }}>
+                    <Text
+                      color={forgotPasswordTextColor}
+                      style={{ cursor: 'pointer', marginBottom: '12px' }}
+                      onPressIn={this.handleForgotPasswordHover}
+                      onPressOut={this.handleForgotPasswordOut}
+                    >
+                      Forgot Password?
+                    </Text>
+                  </Link>
 
                   <CustomButton theme="red" disabled={!isFormValid || loading} enabled={isFormValid} style={{ marginTop: 24 }}>
                     {loading ? (
