@@ -36,6 +36,15 @@ class AuthService {
 
     return null;
   }
+  // Add this method to handle forgot password
+  forgotPassword(email: string) {
+    return axios.post(API_URL + "forgot", { email });
+  }
+
+  // Add this method to handle resetting the password
+  resetPassword(token: string | null, newPassword: string) {
+    return axios.post(API_URL + "reset", { token, new_password: newPassword });
+  }
 }
 
 const authService = new AuthService();

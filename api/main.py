@@ -41,7 +41,7 @@ app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POS
 app.register_blueprint(auth_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(user_controller, url_prefix='/api', allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
-app.register_blueprint(auth_controller, url_prefix='/api/auth')
+app.register_blueprint(auth_controller, url_prefix='/api/auth', allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 
 db_instance = None
 

@@ -17,6 +17,9 @@ import BoardModerator from "./pages/board-moderator.component";
 import BoardAdmin from "./pages/board-admin.component";
 import tamaguiConfig from './tamagui.config';
 
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 type Props = {};
 
 type State = {
@@ -217,6 +220,8 @@ class App extends Component<Props, State> {
                 <Route path="/user" element={<BoardUser />} />
                 <Route path="/mod" element={<BoardModerator />} />
                 <Route path="/admin" element={<BoardAdmin />} />
+                <Route path="/forgot" element={<ForgotPassword />} />
+                <Route path="/api/auth/reset" element={<ResetPassword />} />
               </Routes>
             </Stack>
           </Stack>

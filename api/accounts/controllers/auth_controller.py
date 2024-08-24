@@ -154,3 +154,82 @@ def generate_verification_link(user_id):
     query_params = urlencode({'token': token})
     verification_link = f"http://localhost:8080/api/auth/verify_email?{query_params}"
     return verification_link
+
+@auth_controller.route('/forgot', methods=['POST'])
+async def forgot_password():
+    data = await request.get_json()
+    email = data.get('email')
+
+    user = await User.get_or_none(email=email)
+    if user:
+        reset_link = generate_reset_password_link(user.id)
+        email_body = f"Please click the following link to reset your password: {reset_link}"
+        send_email(user.email, "Reset your password", email_body)
+        user.email_verified = False  # Set email_verified to False
+        await user.save()
+
+        return jsonify({"message": "Password reset link has been sent to your email."}), 200
+    else:
+        return jsonify({"message": "Email not found."}), 404
+
+async def decode_token_and_get_user(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+        user = await User.get_or_none(id=user_id)
+        return user, None
+    except jwt.ExpiredSignatureError:
+        return None, "Token has expired."
+    except jwt.InvalidTokenError:
+        return None, "Invalid token."
+
+@auth_controller.route('/reset', methods=['POST', 'GET'])
+async def reset_password():
+    if request.method == 'GET':
+        token = request.args.get('token')
+        if not token:
+            return jsonify({"message": "Token is missing"}), 400
+
+        user, error = await decode_token_and_get_user(token)
+        if error:
+            return jsonify({"message": error}), 400
+
+        if user:
+            # Redirect to frontend reset password page with the token
+            return redirect(f'http://localhost:8081/api/auth/reset?token={token}')
+        else:
+            return jsonify({"message": "User not found."}), 404
+
+    elif request.method == 'POST':
+        data = await request.get_json()
+        token = data.get('token')
+        new_password = data.get('new_password')
+
+        if not token or not new_password:
+            return jsonify({"message": "Token and new password are required."}), 400
+
+        user, error = await decode_token_and_get_user(token)
+        if error:
+            return jsonify({"message": error}), 400
+
+        if user:
+            user.password = bcrypt.hash(new_password)
+            user.email_verified = True  # Set email_verified to True after password reset
+            await user.save()
+
+            # Send confirmation email
+            email_body = "Your password has been successfully reset."
+            send_email(user.email, "Password Reset Confirmation", email_body)
+
+            return jsonify({"message": "Password has been reset successfully."}), 200
+        else:
+            return jsonify({"message": "User not found."}), 404
+
+def generate_reset_password_link(user_id):
+    token = jwt.encode({
+        'id': user_id,
+        'exp': datetime.utcnow() + timedelta(hours=1)  # Token valid for 1 hour
+    }, SECRET_KEY, algorithm='HS256')
+    query_params = urlencode({'token': token})
+    reset_link = f"http://localhost:8080/api/auth/reset?{query_params}"
+    return reset_link
