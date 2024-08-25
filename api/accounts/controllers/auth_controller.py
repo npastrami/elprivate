@@ -9,6 +9,31 @@ from accounts.config.auth_config import SECRET_KEY
 from accounts.controllers.gmail import send_email
 from urllib.parse import urlencode
 
+async def generate_user_id(is_admin=False):
+    if is_admin:
+        last_admin = await User.filter(id__startswith="X").order_by('-id').first()
+        if last_admin:
+            last_id = int(last_admin.id[1:])
+            new_id = last_id + 1
+        else:
+            new_id = 1
+        return f"X{str(new_id).zfill(7)}"
+    else:
+        users = await User.all().order_by('-id')
+        last_user_id = None
+
+        for user in users:
+            if user.id.isdigit():  # Check if the ID is numeric
+                last_user_id = int(user.id)
+                break
+
+        if last_user_id:
+            new_id = last_user_id + 1
+        else:
+            new_id = 1
+
+        return str(new_id).zfill(8)
+
 auth_controller = Blueprint('auth_controller', __name__)
 
 @auth_controller.route('/signup', methods=['POST'])
@@ -23,11 +48,14 @@ async def signup():
         roles = ['admin']
     else:
         roles = data.get('roles', ['user'])  # Default role is 'user'
+        
+    is_admin = 'admin' in roles
+    user_id = await generate_user_id(is_admin)
 
     hashed_password = bcrypt.hash(password)
 
     try:
-        user = await User.create(username=username, email=email, password=hashed_password)
+        user = await User.create(id=user_id, username=username, email=email, password=hashed_password)
         await user.fetch_related('roles')  # Assuming a M2M relationship is defined
         for role_name in roles:
             role = await Role.get_or_none(name=role_name)
