@@ -2,6 +2,7 @@ from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 class User(models.Model):
+    id = fields.CharField(pk=True, max_length=8)
     username = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255)
     password = fields.CharField(max_length=255)
