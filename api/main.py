@@ -33,7 +33,7 @@ from accounts.routes.auth_routes import auth_routes
 from accounts.routes.user_routes import user_routes
 from accounts.controllers.user_controller import user_controller
 from accounts.controllers.auth_controller import auth_controller
-import os
+import json
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
@@ -212,6 +212,38 @@ async def approve_document():
     await db.close()
 
     return jsonify({"status": "success", "new_status": new_status})
+
+@app.route('/api/get_services', methods=['POST'])
+async def get_services():
+    data = await request.get_json()
+    user_id = data.get('user_id')
+
+    async with db_instance.pool.acquire() as connection:
+        services = await connection.fetchval('''
+            SELECT services FROM accounts WHERE username = $1;
+        ''', user_id)
+        
+        print(services)
+
+        if services:
+            return jsonify({"services": services})
+        else:
+            return jsonify({"services": {}}), 200
+        
+@app.route('/api/add_service', methods=['POST'])
+async def add_service():
+    data = await request.get_json()
+    username = data.get('user_id')
+    service_type = data.get('service_type')
+    documents = data.get('documents')
+    notes = data.get('notes')
+
+    service_id = await db_instance.add_service(username, service_type, documents, notes)
+
+    if service_id:
+        return jsonify({"message": "Service added successfully", "service_id": service_id}), 201
+    else:
+        return jsonify({"message": "Failed to add service"}), 500
     
 @app.route('/api/generate_final_docs', methods=['POST'])
 async def generate_final_docs():
