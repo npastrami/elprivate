@@ -1,0 +1,53 @@
+.nav-button {
+    border-radius: 0;
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    color: #000;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 10px 100%);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    outline: none;
+
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+/* Active button styling */
+.nav-button.active {
+  background-color: #4285F4; /* Active background color */
+  color: #fff;
+  pointer-events: none;
+  transform: translateY(-3px);
+}
+
+/* Hover effect only when the button is not active */
+.nav-button:hover:not(.active):not(.last-active) {
+    background-color: #66B3FF !important; /* Hover color */
+    transform: translateY(-3px);
+  }
+
+/* Ensure the button returns to default color when not active */
+.nav-button:not(.active) {
+  background-color: #f0f0f0 !important; /* Reset to default background color */
+  color: #000 !important; /* Reset to default text color */
+  transform: translateY(0);
+}
+
+/* Ripple effect for the click */
+.nav-button .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.7);
+  transform: scale(0);
+  animation: ripple-animation 0.5s linear;
+  pointer-events: none;
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+  
