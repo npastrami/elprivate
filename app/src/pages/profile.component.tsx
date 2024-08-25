@@ -9,6 +9,7 @@ import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
 import Settings from './dap_ui/components/Profile/settings';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
+import ClientSetup from './dap_ui/components/ClientSetup/ClientSetup';
 
 type Props = {};
 
@@ -148,10 +149,11 @@ export default class Profile extends Component<Props, State> {
             </Card>
           </JobProvider>
         );
+      case "setup":
+        return <ClientSetup />;
 
       case "results":
       case "billing":
-      case "setup":
         return <Text>Under Construction</Text>;
 
       default:
