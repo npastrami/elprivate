@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, MenuItem, Select } from '@mui/material';
+import { Button, TextField, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, MenuItem, Select, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';  // For API requests
 import AuthService from "../../../../services/auth.service";  // Import the AuthService
+import './ClientSetup.css';
 
 type Document = {
     name: string;
@@ -136,6 +138,17 @@ const ClientSetup: React.FC = () => {
         }));
     };
 
+    const handleRemoveDocument = (type: keyof DocumentState, index: number) => {
+        setCurrentDocument((prev: DocumentState) => {
+            const updatedDocuments = [...(prev[type] as Document[])];
+            updatedDocuments.splice(index, 1);
+            return {
+                ...prev,
+                [type]: updatedDocuments,
+            };
+        });
+    };
+
     return (
         <div>
             <Card style={{ padding: '16px', marginBottom: '16px' }}>
@@ -217,7 +230,8 @@ const ClientSetup: React.FC = () => {
                                     <strong style={{ marginRight: '8px' }}>Invoices:</strong>
                                     {currentDocument.invoices.map((doc: Document, index: number) => (
                                         <div 
-                                            key={index} 
+                                            key={index}
+                                            className="document-item" 
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -229,9 +243,37 @@ const ClientSetup: React.FC = () => {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
+                                                position: 'relative',  // Added for positioning the delete button
+                                                // marginRight: '0px',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'inline-flex';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'none';
                                             }}
                                         >
                                             {doc.institution}
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveDocument('invoices', index)}
+                                                style={{
+                                                    marginLeft: '8px',
+                                                    position: 'absolute',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                    color: '#fff',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                    fontSize: '0.8rem',
+                                                    display: 'none',
+                                                }}
+                                                className="delete-button"
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>
@@ -241,7 +283,8 @@ const ClientSetup: React.FC = () => {
                                     <strong style={{ marginRight: '8px' }}>Bank/Credit Card Statements:</strong>
                                     {currentDocument.bankStatements.map((doc: Document, index: number) => (
                                         <div 
-                                            key={index} 
+                                            key={index}
+                                            className="document-item" 
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -253,9 +296,35 @@ const ClientSetup: React.FC = () => {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
+                                                position: 'relative',  // Added for positioning the delete button
+                                                // marginRight: '8px',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'inline-flex';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'none';
                                             }}
                                         >
                                             {doc.institution}
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveDocument('bankStatements', index)}
+                                                style={{
+                                                    marginLeft: '8px',
+                                                    position: 'absolute',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                    color: '#fff',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                }}
+                                                className="delete-button"
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>
@@ -265,7 +334,8 @@ const ClientSetup: React.FC = () => {
                                     <strong style={{ marginRight: '8px' }}>Customs Forms:</strong>
                                     {currentDocument.customsForms.map((doc: Document, index: number) => (
                                         <div 
-                                            key={index} 
+                                            key={index}
+                                            className="document-item" 
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -277,9 +347,35 @@ const ClientSetup: React.FC = () => {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
+                                                position: 'relative',  // Added for positioning the delete button
+                                                // marginRight: '8px',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'inline-flex';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'none';
                                             }}
                                         >
                                             {doc.institution}
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveDocument('customsForms', index)}
+                                                style={{
+                                                    marginLeft: '8px',
+                                                    position: 'absolute',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                    color: '#fff',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                }}
+                                                className="delete-button"
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>
@@ -289,7 +385,8 @@ const ClientSetup: React.FC = () => {
                                     <strong style={{ marginRight: '8px' }}>Tax Forms:</strong>
                                     {currentDocument.taxForms.map((doc: Document, index: number) => (
                                         <div 
-                                            key={index} 
+                                            key={index}
+                                            className="document-item" 
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -301,9 +398,35 @@ const ClientSetup: React.FC = () => {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
+                                                position: 'relative',  // Added for positioning the delete button
+                                                // marginRight: '8px',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'inline-flex';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'none';
                                             }}
                                         >
                                             {doc.institution}
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveDocument('taxForms', index)}
+                                                style={{
+                                                    marginLeft: '8px',
+                                                    position: 'absolute',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                    color: '#fff',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                }}
+                                                className="delete-button"
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>
@@ -313,7 +436,8 @@ const ClientSetup: React.FC = () => {
                                     <strong style={{ marginRight: '8px' }}>Other Documents:</strong>
                                     {currentDocument.otherDocuments.map((doc: Document, index: number) => (
                                         <div 
-                                            key={index} 
+                                            key={index}
+                                            className="document-item" 
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -325,9 +449,35 @@ const ClientSetup: React.FC = () => {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
+                                                position: 'relative',  // Added for positioning the delete button
+                                                // marginRight: '8px',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'inline-flex';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-button') as HTMLElement;
+                                                if (btn) btn.style.display = 'none';
                                             }}
                                         >
                                             {doc.institution}
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveDocument('otherDocuments', index)}
+                                                style={{
+                                                    marginLeft: '8px',
+                                                    position: 'absolute',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                    color: '#fff',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                }}
+                                                className="delete-button"
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     ))}
                                 </div>

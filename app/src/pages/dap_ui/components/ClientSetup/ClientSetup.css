@@ -1,0 +1,7 @@
+.delete-button {
+    display: none !important;
+}
+
+.document-item:hover .delete-button {
+    display: inline-flex !important;
+}

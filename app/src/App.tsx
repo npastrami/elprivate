@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { Stack, YStack, XStack, Button, TamaguiProvider } from 'tamagui';
 import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
+// import { loadFull } from "tsparticles";
 import './App.css';
 
 import AuthService from "./services/auth.service";
@@ -74,9 +74,9 @@ class App extends Component<Props, State> {
   render() {
     const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
 
-    const particlesInit = async (main: any) => {
-      await loadFull(main);
-    };
+    // const particlesInit = async (main: any) => {
+    //   await loadFull(main);
+    // };
 
     return (
       <TamaguiProvider config={tamaguiConfig}>
@@ -84,7 +84,7 @@ class App extends Component<Props, State> {
           {/* Particle.js Background */}
           <Particles
             id="tsparticles"
-            init={particlesInit}
+            // init={particlesInit}
             options={{
               background: {
                 color: {
@@ -106,7 +106,7 @@ class App extends Component<Props, State> {
                 },
                 modes: {
                   push: {
-                    quantity: 4,
+                    quantity: 3,
                   },
                   repulse: {
                     distance: 100,
@@ -143,7 +143,7 @@ class App extends Component<Props, State> {
                     enable: true,
                     area: 800,
                   },
-                  value: 80,
+                  value: 69,
                 },
                 opacity: {
                   value: 0.5,
