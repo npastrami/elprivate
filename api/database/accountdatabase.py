@@ -31,6 +31,17 @@ class AccountDatabase:
                     services JSONB
                 );
             ''')
+            
+            await connection.execute('''
+                CREATE TABLE IF NOT EXISTS service_projects (
+                    service_id UUID PRIMARY KEY,
+                    client_id TEXT,
+                    service_type TEXT,
+                    documents_required JSONB,
+                    notes TEXT,
+                    hours_worked INT DEFAULT 0
+                );
+            ''')
 
     async def update_user_account(self, username: str, new_username: str, new_email: str):
         async with self.pool.acquire() as connection:
@@ -85,6 +96,12 @@ class AccountDatabase:
                     await connection.execute('''
                         UPDATE accounts SET services = $1 WHERE username = $2;
                     ''', json.dumps(services_dict), username)
+                    
+                    # Now add the service to the service_projects table
+                await connection.execute('''
+                    INSERT INTO service_projects (service_id, client_id, service_type, documents_required, notes)
+                    VALUES ($1, $2, $3, $4, $5);
+                ''', service_id, username, service_type, json.dumps(documents), notes)
 
                 return service_id
             except Exception as e:

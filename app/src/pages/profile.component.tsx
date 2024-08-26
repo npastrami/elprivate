@@ -8,9 +8,11 @@ import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
 import Settings from './dap_ui/components/Profile/settings';
+import DocumentsDue from './dap_ui/components/Profile/DocumentsDue';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
 import ClientSetup from './dap_ui/components/ClientSetup/ClientSetup';
 import NavButton from './NavButton';
+import axios from 'axios';
 
 type Props = {};
 
@@ -19,7 +21,9 @@ type State = {
   userReady: boolean,
   currentUser: IUser & { accessToken: string },
   shadowStyle: { left: number, top: number, opacity: number },
-  activeTab: string
+  activeTab: string,
+  services: any[],
+  clientId?: string,
 }
 
 export default class Profile extends Component<Props, State> {
@@ -31,7 +35,9 @@ export default class Profile extends Component<Props, State> {
       userReady: false,
       currentUser: AuthService.getCurrentUser(),
       shadowStyle: { left: 0, top: 0, opacity: 0 },
-      activeTab: "upload"  // Default to "upload"
+      activeTab: "upload",  // Default to "upload"
+      services: [],
+      clientId: "",
     };
   }
 
@@ -41,6 +47,36 @@ export default class Profile extends Component<Props, State> {
       this.setState({ redirect: "/login" });
     } else {
       this.setState({ currentUser, userReady: true });
+      this.fetchServices(currentUser.id);
+    }
+  }
+
+  fetchServices = async (userId: string) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8080/api/get_services', { user_id: userId });
+      if (response.status === 200 && response.data.services) {
+        let servicesData = response.data.services;
+
+        if (typeof servicesData === 'string') {
+          servicesData = JSON.parse(servicesData);
+        }
+
+        const servicesArray = Object.entries(servicesData).flatMap(([serviceType, servicesList]) => {
+          const typedServicesList = servicesList as Array<any>;
+          return typedServicesList.map((service) => ({
+            service_type: serviceType,
+            ...service,
+          }));
+        });
+
+        console.log("Fetched services:", servicesArray);
+        this.setState({ services: servicesArray });
+      } else {
+        this.setState({ services: [] });  // If no services found, set to an empty array
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      this.setState({ services: [] });  // In case of an error, set services to an empty array
     }
   }
 
@@ -52,8 +88,18 @@ export default class Profile extends Component<Props, State> {
     this.setState({ currentUser: updatedUser });
   }
 
+  handleClientIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ clientId: event.target.value });
+  }
+
+  handleKeyPress = (clientID: string) => {
+    if (clientID) {
+      this.fetchServices(clientID);
+    }
+  }
+
   renderContent() {
-    const { currentUser, userReady, activeTab } = this.state;
+    const { currentUser, userReady, activeTab} = this.state;
 
     if (!userReady) return null;
 
@@ -68,10 +114,13 @@ export default class Profile extends Component<Props, State> {
           <JobProvider>
             <YStack space="$4">
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
-                <JobInput />
+                <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </Card>
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
                 <FileUpload />
+              </Card>
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="20px">
+                <DocumentsDue clientId={currentUser.id} services={this.state.services || []}/> 
               </Card>
             </YStack>
           </JobProvider>
@@ -82,7 +131,7 @@ export default class Profile extends Component<Props, State> {
           <JobProvider>
             <YStack space="$4">
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
-                <JobInput />
+                <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </Card>
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
                 <h3>Review Workpapers</h3>
@@ -110,7 +159,7 @@ export default class Profile extends Component<Props, State> {
               }}
             >
               <div style={{ flexGrow: 0 }}>
-                <JobInput />
+                <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </div>
               <div style={{ flexGrow: 1 }}>
                 <ClientDataTable />

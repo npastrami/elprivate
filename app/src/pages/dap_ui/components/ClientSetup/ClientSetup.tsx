@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, MenuItem, Select, IconButton } from '@mui/material';
+import { Button, TextField, Card, MenuItem, Select, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';  // For API requests
 import AuthService from "../../../../services/auth.service";  // Import the AuthService
+import DocumentsDue from '../Profile/DocumentsDue';
 import './ClientSetup.css';
 
 type Document = {
@@ -502,7 +503,7 @@ const ClientSetup: React.FC = () => {
                 </div>
             </Card>
     
-            <TableContainer component={Paper}>
+            {/* <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -551,7 +552,8 @@ const ClientSetup: React.FC = () => {
                         })}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </TableContainer> */}
+            <DocumentsDue clientId={userId} services={services} />
         </div>
     );
 };
