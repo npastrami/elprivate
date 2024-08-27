@@ -28,7 +28,7 @@ class Extractor:
                     if isinstance(field_data, dict):
                         field_value = str(field_data['value'])
                         confidence = field_data['confidence']
-                        bounding_box = json.dumbs(field_data.get('bounding_box', []))
+                        bounding_box = json.dumps(field_data.get('bounding_box', []))
                     else:
                         field_value = str(field_data)
                         confidence = None

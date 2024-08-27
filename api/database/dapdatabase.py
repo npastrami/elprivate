@@ -61,6 +61,8 @@ class DapDatabase:
             field_name TEXT,
             field_value TEXT,
             confidence REAL,
+            bounding_box JSONB,
+            field_color TEXT,
             access_id TEXT
         );
         """
