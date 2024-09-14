@@ -1,12 +1,12 @@
-from api.database.dapdatabase import Database
-from form_mapping_utils import netchb_term_matching
-from netchb.netchb_api_push import client
+from database.dapdatabase import DapDatabase
+from dap.form_mapping_utils import netchb_term_matching
+from netchb_api_push import client
 
-class NetchbXMLBuilder:
+class Netchb86EntryXMLBuilder:
     def __init__(self, client_id, doc_type):
         self.client_id = client_id
         self.doc_type = doc_type
-        self.db = Database(client_id, None)  # Initialize with client_id only
+        self.db = DapDatabase(client_id, None)  # Initialize with client_id only
 
     async def build_xml(self):
         # Fetch field values from the database
