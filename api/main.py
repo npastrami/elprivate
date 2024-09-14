@@ -34,6 +34,7 @@ from accounts.routes.user_routes import user_routes
 from accounts.controllers.user_controller import user_controller
 from accounts.controllers.auth_controller import auth_controller
 import json
+from dap.netchb.netchb_ams_xml_builder import NetchbAMSBuilder
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
@@ -244,7 +245,7 @@ async def add_service():
         return jsonify({"message": "Service added successfully", "service_id": service_id}), 201
     else:
         return jsonify({"message": "Failed to add service"}), 500
-    
+
 @app.route('/api/generate_final_docs', methods=['POST'])
 async def generate_final_docs():
     data = await request.get_json()
@@ -258,7 +259,6 @@ async def generate_final_docs():
     db = DapDatabase(client_id, None)
 
     final_urls = []
-
     approved_docs = await db.get_documents_for_review(client_id)
 
     for doc_name in doc_names:
@@ -282,12 +282,90 @@ async def generate_final_docs():
                 last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
                 print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
                 final_urls.append(f"Saved to database with ID: {last_inserted_id}")
-        else:
-            print(f"No matching documents found for {doc_name}.")
+                
+            # Trigger the XML generation and submission for AMS MAWB
+            mawb_data = {
+                "mawb_prefix": "001",  # Example data, replace with actual values
+                "mawb_number": "12345678",
+                "origin_airport": "JFK",
+                "arrival_airport": "LAX",
+                "hawbs": [
+                    {
+                        "hawb_number": "HAWB001",
+                        "commercial_description": "Electronics",
+                        "shipper": {
+                            "name": "Shipper Name",
+                            "address": "123 Shipper St",
+                            "city": "Shipper City",
+                            "country": "US"
+                        },
+                        "consignee": {
+                            "name": "Consignee Name",
+                            "address": "456 Consignee Ave",
+                            "city": "Consignee City",
+                            "country": "US"
+                        },
+                        "piece_count": 10,
+                        "weight": 100.0,
+                        "weight_unit": "K",
+                    }
+                ]
+            }
+
+            # Create an instance of NetchbAMSBuilder and build the XML
+            ams_builder = NetchbAMSBuilder(client_id, mawb_data)
+            xml_str = await ams_builder.build_xml()
+            
+            # Push the XML to the sandbox API and print the response
+            response = await ams_builder.push_to_netchb(xml_str)
+            print(f"Response from sandbox API for {doc_name}: {response}")
 
     await db.close()
 
-    return jsonify({"final_docs": final_urls})
+    return jsonify({"final_docs": final_urls})    
+# @app.route('/api/generate_final_docs', methods=['POST'])
+# async def generate_final_docs():
+#     data = await request.get_json()
+#     client_id = data.get('client_id')
+#     doc_names = data.get('doc_names', [])
+#     send_to_catcher = data.get('send_to_catcher', False)
+#     print(f"list of doc_name to print: {doc_names}")
+    
+#     print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
+#     catcher = Catcher('approved-docs')
+#     db = DapDatabase(client_id, None)
+
+#     final_urls = []
+
+#     approved_docs = await db.get_documents_for_review(client_id)
+
+#     for doc_name in doc_names:
+#         matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
+        
+#         if matching_docs:
+#             field_data = {
+#                 doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
+#                 for doc in matching_docs
+#             }
+            
+#             if send_to_catcher:
+#                 print("sending to catcher")
+#                 final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
+#                 print(f"final_url for {doc_name}: {final_url}")
+#                 final_urls.append(final_url)
+#             else:
+#                 # Save to approved_docs database without uploading to Catcher
+#                 final_url = None
+#                 print("skipping the catcher")
+#                 last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
+#                 print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
+#                 final_urls.append(f"Saved to database with ID: {last_inserted_id}")
+#         else:
+#             print(f"No matching documents found for {doc_name}.")
+
+#     await db.close()
+
+#     return jsonify({"final_docs": final_urls})
 
 @app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])
 async def download_csv(document_id):
