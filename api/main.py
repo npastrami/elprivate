@@ -35,10 +35,11 @@ from accounts.controllers.user_controller import user_controller
 from accounts.controllers.auth_controller import auth_controller
 import json
 from dap.netchb.netchb_ams_xml_builder import NetchbAMSBuilder
+from accounts.middleware.auth_jwt import verify_token, role_required
 
 app = Quart(__name__)
 # Enable CORS for all routes and origins
-app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POST", "OPTIONS", "PUT"], allow_headers=["Content-Type", "Authorization"])
+app = cors(app, allow_origin="http://localhost:8081", allow_methods=["GET", "POST", "OPTIONS", "PUT"], allow_headers=["Content-Type", "Authorization", "x-access-token"])
 app.register_blueprint(auth_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(user_controller, url_prefix='/api', allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
@@ -245,6 +246,43 @@ async def add_service():
         return jsonify({"message": "Service added successfully", "service_id": service_id}), 201
     else:
         return jsonify({"message": "Failed to add service"}), 500
+    
+@app.route('/api/get_service_projects', methods=['GET'])
+@verify_token
+@role_required('admin')
+async def get_service_projects():
+    async with db_instance.pool.acquire() as connection:
+        service_projects = await connection.fetch('SELECT * FROM service_projects')
+        service_projects_list = [dict(record) for record in service_projects]
+        return jsonify({'service_projects': service_projects_list})
+
+@app.route('/api/get_admins', methods=['GET'])
+@verify_token
+@role_required('admin')  # Only allow admins to fetch the user list
+async def get_admins():
+    async with db_instance.pool.acquire() as connection:
+        users = await connection.fetch('''
+            SELECT user_id FROM user_roles WHERE user_id LIKE 'X%'
+        ''')
+        users_list = [dict(record) for record in users]
+        return jsonify({'admins': users_list})
+   
+@app.route('/api/update_service_project', methods=['POST'])
+@verify_token
+@role_required('admin')
+async def update_service_project():
+    data = await request.get_json()
+    service_id = data.get('service_id')
+    status = data.get('status')
+    assigned_admin_id = data.get('assigned_admin_id')
+
+    async with db_instance.pool.acquire() as connection:
+        await connection.execute('''
+            UPDATE service_projects
+            SET status = $1, assigned_admin_id = $2
+            WHERE service_id = $3
+        ''', status, assigned_admin_id, service_id)
+    return jsonify({'message': 'Service project updated successfully'})
 
 @app.route('/api/generate_final_docs', methods=['POST'])
 async def generate_final_docs():
