@@ -8,7 +8,9 @@ import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
 import Settings from './dap_ui/components/Profile/settings';
 import DocumentsDue from './dap_ui/components/Profile/DocumentsDue';
+import Billing from './dap_ui/components/Profile/Billing';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
+import Results from './dap_ui/components/FileUpload/Results';
 import ClientSetup from './dap_ui/components/ClientSetup/ClientSetup';
 import AdminSchedule from './dap_ui/components/ClientSetup/AdminSchedule';
 import NavButton from './NavButton';
@@ -171,8 +173,22 @@ export default class Profile extends Component<Props, State> {
         return <ClientSetup />;
 
       case "results":
+        return ( 
+          <JobProvider>
+            <YStack space="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
+                <JobInput onEnterKeyPress={this.handleKeyPress}/>
+              </Card>
+            <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+              <h3>Results</h3>
+              <Results clientId={currentUser.id} />
+            </Card>
+            </YStack>
+          </JobProvider>);
       case "billing":
-        return <Text>Under Construction</Text>;
+        return (<Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="20px">
+          <Billing clientId={currentUser.id} services={this.state.services || []}/> 
+        </Card>);
 
       default:
         return <Text>Invalid Tab</Text>;

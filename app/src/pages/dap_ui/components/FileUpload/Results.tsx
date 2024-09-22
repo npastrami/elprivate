@@ -11,7 +11,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { JobContext } from '../JobInput/JobContext';  // Import the JobContext
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
-interface ReviewWorkpapersProps {
+interface ResultsProps {
   clientId: string; 
 }
 
@@ -33,17 +33,15 @@ interface Workpaper extends ClientDoc {
 
 type SortOrder = 'asc' | 'desc' | null;
 
-const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
+const Results: React.FC<ResultsProps> = () => {
   const { clientID } = useContext(JobContext);  // Access clientID from JobContext
   const [workpapers, setWorkpapers] = useState<Workpaper[]>([]);
   const [filteredWorkpapers, setFilteredWorkpapers] = useState<Workpaper[]>([]);
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [docImage, setDocImage] = useState<string | null>(null);
-  const [showCurrentDocFields, setShowCurrentDocFields] = useState<boolean>(true); // Preset toggle to "on"
   const [sortColumn, setSortColumn] = useState<keyof Workpaper | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
   const [filters, setFilters] = useState<{ [key in keyof Workpaper]?: string }>({});
-  const [hideNoneValues, setHideNoneValues] = useState<boolean>(false); // New toggle state for hiding None values
   const [sendToCatcher, setSendToCatcher] = useState<boolean>(false);
   const [editedFieldsState, setEditedFieldsState] = useState<{ [key: string]: { field_name: string; field_value: string }[] }>({});
   const [boundingBoxes, setBoundingBoxes] = useState<JSX.Element[]>([])
@@ -125,16 +123,6 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   useEffect(() => {
     let newWorkpapers = [...workpapers];
   
-    // Apply "Hide None Values" filter first
-    if (hideNoneValues) {
-      newWorkpapers = newWorkpapers.filter((workpaper) => workpaper.field_value !== "None");
-    }
-  
-    // Apply the "Show Only Fields for Current Document" filter
-    if (showCurrentDocFields) {
-      newWorkpapers = newWorkpapers.filter((wp) => wp.uuid === workpapers[currentDocIndex]?.uuid);
-    }
-  
     // Apply other filters
     Object.keys(filters).forEach((key) => {
       const filterValue = filters[key as keyof Workpaper];
@@ -160,7 +148,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     }
   
     setFilteredWorkpapers(newWorkpapers);
-  }, [filters, sortColumn, sortOrder, workpapers, showCurrentDocFields, currentDocIndex, hideNoneValues]);
+  }, [filters, sortColumn, sortOrder, workpapers]);
 
   const handleSort = (column: keyof Workpaper) => {
     const newSortOrder = sortColumn === column && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -191,38 +179,38 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     }
   };
 
-  const handleFieldValueChange = (index: number, newValue: string) => {
-    const updatedWorkpapers = [...filteredWorkpapers];
-    updatedWorkpapers[index].field_value = newValue;
+  // const handleFieldValueChange = (index: number, newValue: string) => {
+  //   const updatedWorkpapers = [...filteredWorkpapers];
+  //   updatedWorkpapers[index].field_value = newValue;
 
-    setFilteredWorkpapers(updatedWorkpapers);
+  //   setFilteredWorkpapers(updatedWorkpapers);
 
-    const docUUID = updatedWorkpapers[index].uuid;
-    const fieldName = updatedWorkpapers[index].field_name;
+  //   const docUUID = updatedWorkpapers[index].uuid;
+  //   const fieldName = updatedWorkpapers[index].field_name;
 
-    setEditedFieldsState(prevState => {
-        const updatedDocFields = prevState[docUUID] || [];
+  //   setEditedFieldsState(prevState => {
+  //       const updatedDocFields = prevState[docUUID] || [];
 
-        // Check if the field is already in the edited fields for this document
-        const existingFieldIndex = updatedDocFields.findIndex(field => field.field_name === fieldName);
+  //       // Check if the field is already in the edited fields for this document
+  //       const existingFieldIndex = updatedDocFields.findIndex(field => field.field_name === fieldName);
 
-        if (existingFieldIndex !== -1) {
-            // Update the existing field's value
-            updatedDocFields[existingFieldIndex].field_value = newValue;
-        } else {
-            // Add the new field
-            updatedDocFields.push({
-                field_name: fieldName,
-                field_value: newValue
-            });
-        }
+  //       if (existingFieldIndex !== -1) {
+  //           // Update the existing field's value
+  //           updatedDocFields[existingFieldIndex].field_value = newValue;
+  //       } else {
+  //           // Add the new field
+  //           updatedDocFields.push({
+  //               field_name: fieldName,
+  //               field_value: newValue
+  //           });
+  //       }
 
-        return {
-            ...prevState,
-            [docUUID]: updatedDocFields
-        };
-    });
-  };
+  //       return {
+  //           ...prevState,
+  //           [docUUID]: updatedDocFields
+  //       };
+  //   });
+  // };
 
   const handleApproveDocument = async () => {
     const updatedWorkpapers = [...workpapers];
@@ -346,46 +334,6 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
     updateBoundingBoxes(); // Call it directly in case the image is already loaded
   }, [docImage, currentDocIndex, activeField, workpapers, filteredWorkpapers]);
 
-  const generateFinalDocs = async () => {
-    // Filter out the documents with the status "reviewed"
-    const reviewedDocs = workpapers.filter(doc => doc.approved);
-
-    if (reviewedDocs.length === 0) {
-        alert("No reviewed documents found to generate final docs.");
-        return;
-    }
-
-    // Extract the document names from the reviewed documents
-    const docNames = reviewedDocs
-        .map(doc => doc.doc_name)
-        .filter((value, index, self) => self.indexOf(value) === index);
-
-    try {
-        // Send a single request with all the unique reviewed document names
-        const response = await fetch('http://127.0.0.1:8080/api/generate_final_docs', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                client_id: clientID,  // Use clientID from context
-                doc_names: docNames,  // Send the array of unique reviewed document 
-                send_to_catcher: sendToCatcher
-            }),
-        });
-
-        if (response.ok) {
-            alert("Final documents generation completed successfully.");
-        } else {
-            console.error("Failed to process some documents.");
-            alert("Failed to generate some final documents.");
-        }
-    } catch (error) {
-        console.error("Error generating final docs:", error);
-        alert("An error occurred while generating final documents.");
-    }
-  };
-
   return (
     <div style={{ display: 'flex', maxHeight: '1000px', width: '100%', overflow: 'hidden' }}>
       <div style={{ flex: 1, width: '50%', maxHeight: '800px', maxWidth: '1000px', overflowY: 'auto' }}>
@@ -426,22 +374,12 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
           </IconButton>
         </div>
 
-        <FormControlLabel
-          control={<Switch checked={showCurrentDocFields} onChange={() => setShowCurrentDocFields(!showCurrentDocFields)} />}
-          label="Show Only Fields for Current Document"
-          style={{ marginBottom: '8px' }}
-        />
-        <FormControlLabel
-          control={<Switch checked={hideNoneValues} onChange={() => setHideNoneValues(!hideNoneValues)} />}
-          label="Hide None Values"
-          style={{ marginBottom: '8px' }}
-        />
-        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '1000px', maxWidth: '1000px', maxHeight: '1000px' }}>
+        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '1000px', maxWidth: '1000px', maxHeight: '500px' }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>
-                  <Button onClick={() => handleSort('doc_name')}>Document Name</Button>
+                  <Button onClick={() => handleSort('doc_name')}>Service</Button>
                   <TextField
                     value={filters.doc_name || ''}
                     onChange={(e) => handleFilterChange('doc_name', e.target.value)}
@@ -450,7 +388,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <Button onClick={() => handleSort('approved')}>Status</Button>
+                  <Button onClick={() => handleSort('approved')}>Documents</Button>
                   <TextField
                     value={filters.approved || ''}
                     onChange={(e) => handleFilterChange('approved', e.target.value)}
@@ -459,29 +397,10 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <Button onClick={() => handleSort('field_name')}>Field Name</Button>
+                  <Button onClick={() => handleSort('field_name')}>Status</Button>
                   <TextField
                     value={filters.field_name || ''}
                     onChange={(e) => handleFilterChange('field_name', e.target.value)}
-                    placeholder="Search"
-                    variant="standard"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button onClick={() => handleSort('field_value')}>Field Value</Button>
-                  <TextField
-                    value={filters.field_value || ''}
-                    onChange={(e) => handleFilterChange('field_value', e.target.value)}
-                    placeholder="Search"
-                    variant="standard"
-                  />
-                </TableCell>
-                <TableCell>Color</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleSort('confidence')}>Confidence</Button>
-                  <TextField
-                    value={filters.confidence || ''}
-                    onChange={(e) => handleFilterChange('confidence', e.target.value)}
                     placeholder="Search"
                     variant="standard"
                   />
@@ -500,41 +419,13 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                   <TableCell>{workpaper.doc_name}</TableCell>
                   <TableCell>{workpaper.approved ? 'Reviewed' : 'Extracted'}</TableCell>
                   <TableCell>{workpaper.field_name}</TableCell>
-                  <TableCell>
-                    <TextField
-                      value={workpaper.field_value}
-                      onChange={(e) => handleFieldValueChange(index, e.target.value)}
-                      variant="outlined"
-                      fullWidth
-                      disabled={workpapers[currentDocIndex]?.approved}  // Disable input if approved
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent triggering the row click event
-                        setActiveField(prevActiveField => prevActiveField === workpaper.field_name ? null : workpaper.field_name);
-                      }}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        backgroundColor: workpaper.field_color,
-                        border: workpaper.field_name === activeField ? '2px solid black' : 'none', // Highlight active color cube
-                        cursor: 'pointer',
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{workpaper.confidence}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
         <Button variant="contained" onClick={loadDocumentsForReview}>
-          Load Review Docs
-        </Button>
-        <Button variant="contained" onClick={generateFinalDocs}>
-          Generate Final Docs
+          Load Resulting Docs
         </Button>
         <FormControlLabel
           control={
@@ -566,7 +457,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
                 borderRadius: '4px',
                 boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)',
               }}>
-                Approved
+                Downloaded
               </div>
             )}
             <TransformWrapper
@@ -641,4 +532,4 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
   );
 };
 
-export default ReviewWorkpapers;
+export default Results;
