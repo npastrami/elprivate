@@ -39,7 +39,9 @@ class AccountDatabase:
                     service_type TEXT,
                     documents_required JSONB,
                     notes TEXT,
-                    hours_worked INT DEFAULT 0
+                    hours_worked INT DEFAULT 0,
+                    status TEXT DEFAULT 'Ready',
+                    assigned_admin_id TEXT
                 );
             ''')
 
@@ -99,9 +101,9 @@ class AccountDatabase:
                     
                     # Now add the service to the service_projects table
                 await connection.execute('''
-                    INSERT INTO service_projects (service_id, client_id, service_type, documents_required, notes)
-                    VALUES ($1, $2, $3, $4, $5);
-                ''', service_id, username, service_type, json.dumps(documents), notes)
+                    INSERT INTO service_projects (service_id, client_id, service_type, documents_required, notes, status, assigned_admin_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7);
+                ''', service_id, username, service_type, json.dumps(documents), notes, 'Backlog', None)
 
                 return service_id
             except Exception as e:

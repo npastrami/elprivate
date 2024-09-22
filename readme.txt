@@ -13,7 +13,7 @@ Document Automation Pipeline - Root Readme
 	/accounts has:
 		/config - handles account config
 		/controllers - handles logic of how the account can interact with other backend components?
-		/middleware - $$$$$$$$$$
+		/middleware - verifies role, token, and no duplicate accounts
 		/models - handles account attributes and instantiation in the database.
 		/routes - handles auth of user privilege for routed requests.
 

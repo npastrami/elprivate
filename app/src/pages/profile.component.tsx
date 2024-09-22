@@ -6,11 +6,11 @@ import { Text, YStack, Card, XStack } from 'tamagui';
 import { FileUpload } from './dap_ui/components/FileUpload/index';
 import { JobInput } from './dap_ui/components/JobInput';
 import { JobProvider } from './dap_ui/components/JobInput/JobContext';
-import ClientDataTable from './dap_ui/components/ClientDataTable/ClientDataTable';
 import Settings from './dap_ui/components/Profile/settings';
 import DocumentsDue from './dap_ui/components/Profile/DocumentsDue';
 import ReviewWorkpapers from './dap_ui/components/FileUpload/ReviewWorkpapers';
 import ClientSetup from './dap_ui/components/ClientSetup/ClientSetup';
+import AdminSchedule from './dap_ui/components/ClientSetup/AdminSchedule';
 import NavButton from './NavButton';
 import axios from 'axios';
 
@@ -162,7 +162,7 @@ export default class Profile extends Component<Props, State> {
                 <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </div>
               <div style={{ flexGrow: 1 }}>
-                <ClientDataTable />
+                <AdminSchedule />
               </div>
             </Card>
           </JobProvider>
