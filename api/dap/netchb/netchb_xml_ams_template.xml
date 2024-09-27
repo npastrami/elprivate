@@ -1,0 +1,670 @@
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
+<xsd:schema xmlns:mawb="http://www.netchb.com/xml/mawb" xmlns:data="http://www.netchb.com/xml/data" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.netchb.com/xml/mawb" elementFormDefault="qualified" attributeFormDefault="unqualified">
+<div id="in-page-channel-node-id" data-channel-name="in_page_channel_zfyevw"/>
+<xsd:annotation>
+<xsd:documentation> This is the XML Schema for an AMS Air MAWB XML document that will be used to validate any entry submitted to NetChb using the AMS web service </xsd:documentation>
+</xsd:annotation>
+<xsd:import namespace="http://www.netchb.com/xml/data" schemaLocation="http://www.netchb.com/xml/data/data_type.xsd"/>
+<!--  ****************************************************************  -->
+<xsd:element name="mawb">
+<xsd:annotation>
+<xsd:documentation> mawb is the root element of the document. </xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:all>
+<xsd:element name="file-acas" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <file-acas/> tag is optional. Including this tag indicates that you intend to submit ACAS information. ]]>
+</xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="transmit-ams" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <transmit-ams/> tag is optional. If included, NetChb will automatically transmit the MAWB when the upload is complete. ]]>
+</xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:all>
+<xsd:element name="transmission-type">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="add"/>
+<xsd:enumeration value="replace"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="reason-for-amendment" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ This tag should be included if <transmission-type>replace</transmission-type> is included. Valid values are: 01 - Not laden aboard per evidence from foreign shipper or amended bill of lading. 02 - Error in manifesting. Not laden on this flight. Laden on subsequent flight for transportation to the U.S. 03 - Clerical error in manifesting per air waybill in files. 04 - Pilfered or prematurely landed prior to arrival in the U.S. per signed statement of master/his agent or logged. 05 - Erroneously duplicated by another air waybill on same flight. 06 - Prematurely unladen or over carried to another U.S. port where proper disposition was made per evidence in our files. 07 - Inadvertently retained onboard and taken foreign per statement of master/his agent. Amended air waybill or landing certificate in our files. 08 - Container stripped under CBP Supervision. Foreign seals affixed abroad were intact per evidence in our files. 09 - Merchandise apparently pilfered on dock while in custody of carrier. 10 - Inadvertently delivered without CBP authorization. Goods will be redelivered intact or carrier will pay duty and taxes. 11 - Overage; omitted from manifest through clerical error. 12 - Overage; manifested for discharge at another port and inadvertently discharged at this port. 13 - Proper entry filed or placed in G.O. per entry or G.O. number. 14 - Merchandise inadvertently delivered to consignee without CBP authorization. Merchandise will be redelivered intact or liquidated damages paid. 15 - Merchandise cannot be located and has apparently been lost. Liquidated damages will be paid. 16 - Error in quantity manifested at airport of origin. 17 - Restuffing a container. 18 - Transmission delayed by electronic communications failure. 19 - Amendment to non-critical fields or provision of additional data to record. Quantity manifested is not changed and original report was timely. 20 - Provision of detail data to air waybill record by a Deconsolidator. 21 - Provision of detail data to an express consignment record or a change in optional data previously submitted for an express consignment record. ]]>
+</xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="01"/>
+<xsd:enumeration value="02"/>
+<xsd:enumeration value="03"/>
+<xsd:enumeration value="04"/>
+<xsd:enumeration value="05"/>
+<xsd:enumeration value="06"/>
+<xsd:enumeration value="07"/>
+<xsd:enumeration value="08"/>
+<xsd:enumeration value="09"/>
+<xsd:enumeration value="10"/>
+<xsd:enumeration value="11"/>
+<xsd:enumeration value="12"/>
+<xsd:enumeration value="13"/>
+<xsd:enumeration value="14"/>
+<xsd:enumeration value="15"/>
+<xsd:enumeration value="16"/>
+<xsd:enumeration value="17"/>
+<xsd:enumeration value="18"/>
+<xsd:enumeration value="19"/>
+<xsd:enumeration value="20"/>
+<xsd:enumeration value="21"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="skip-submitted" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <skip-submitted/> tag is optional. If included, NetChb will not transmit AMS and ACAS info that has already been submitted. The default is to not include this tag. ]]>
+</xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="dummy-hawb-to-cancel" minOccurs="0">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="50"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+</xsd:all>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="transmit-acas" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <transmit-acas/> tag is optional. If included, NetChb will automatically transmit the ACAS data when the upload is complete. ]]>
+</xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="assign-to" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> This is the username of the user who this MAWB should be assigned to. This tag is optional. If this tag is omitted, the MAWB will be assigned to the user whose username and password is submitted as the security credentials for the uploadMawb operation on this web service </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="20"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="do-not-overwrite" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <do-not-overwrite/> tag is optional. Including this tag indicates that you do not want to overwrite the MAWB data, and instead create a potential duplicate. The default behavior is to exclude this tag. ]]>
+</xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="do-not-delete-hawb-not-included" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation>
+<![CDATA[ The <do-not-delete-hawb-not-included/> tag is optional. This tag becomes relevant if the do-not-overwrite tag is EXCLUDED from this file. It will not delete any existing HAWBs that are not included in a subsequent request to upload MAWB data. The default behavior is to exclude this tag. ]]>
+</xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="mawb-prefix">
+<xsd:annotation>
+<xsd:documentation> This should be the 3 digit airline prefix i.e 001 for American Airlines </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="3"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="mawb-number">
+<xsd:annotation>
+<xsd:documentation> This should be the 8 digit MAWB number </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="8"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="reference-number" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> This is optional. It is a field where you can include your own reference number </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="100"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="cargo-terminal-operator" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional. Usually the same as the carrier code, i.e. AA </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="3"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="origin-airport">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="[A-Z]{3}"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="arrival-airport">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="[A-Z]{3}"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="location-of-goods" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional, only relevant if you intend to use this data to file a type 86 entry </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="4"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="preparer-port" type="data:portType" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional, only relevant if you intend to use this data to file a type 86 entry as a remote entry </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="remote-exam-port" type="data:portType" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional, only relevant if you intend to use this data to file a type 86 entry as a remote entry </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="gross-weight" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional, use for record keeping of MAWB gross weight. </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:long">
+<xsd:minExclusive value="0"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="gross-weight-unit" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Default is KG K = KG L = LB </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="K"/>
+<xsd:enumeration value="L"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="permit-to-proceed-airport" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="[A-Z]{3}"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="arrival-date-at-permit-to-proceed-airport" type="xsd:date" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="express-consignment" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="inbond-or-local-transfer" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="us-destination-airport" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="[A-Z]{3}"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="destination-type" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional D = Domestic I = International R = FROB </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="D"/>
+<xsd:enumeration value="I"/>
+<xsd:enumeration value="R"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="agent" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="7"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="bonded-carrier-id" type="data:taxIdType" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="onward-carrier" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="3"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="destination-shed" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="4"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="inbond-number" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, normally omit this tag </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="\d{9}"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="hawbs">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="hawb" type="mawb:hawbType" minOccurs="0" maxOccurs="unbounded"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+</xsd:all>
+</xsd:complexType>
+</xsd:element>
+<!--  ****************************************************************  -->
+<xsd:complexType name="hawbType">
+<xsd:all>
+<xsd:element name="hawb-number">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="50"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="commercial-description">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="450"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="shipper" type="mawb:amsEntityType">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="consignee" type="mawb:amsEntityType">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="other-parties-list" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional </xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="other-parties" type="mawb:otherPartiesType" minOccurs="1" maxOccurs="unbounded"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="piece-count">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:integer">
+<xsd:minInclusive value="1"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="weight">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:float">
+<xsd:minExclusive value="0"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="weight-unit">
+<xsd:annotation>
+<xsd:documentation> Required K = KG L = LB </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="K"/>
+<xsd:enumeration value="L"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="value" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Value should be in USD Optional. Required for clearing off of the manifest or intending to create a type 86 entry from this data </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:decimal">
+<xsd:minInclusive value="1"/>
+<xsd:fractionDigits value="2"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="country-of-origin" type="data:countryCodeType" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional. Required for clearing off of the manifest or intending to create a type 86 entry from this data </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="hts" type="data:tariffNoType" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional. Required for clearing off of the manifest or intending to create a type 86 entry from this data </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="flight-information" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional. The flight information should genearlly only be included if this is a split shipment </xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:all>
+<xsd:element name="airline" minOccurs="0">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="3"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="flight-number" minOccurs="0">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="\d{3,4}[A-Z]?"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="arrival-date" type="xsd:date" minOccurs="0"/>
+</xsd:all>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="tracking-id-number" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="35"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="container-number" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="50"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="subject-to-fda" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> omit unless goods are subject to FDA </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="entry-type" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> omit unless express consignment </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="11"/>
+<xsd:enumeration value="86"/>
+<xsd:enumeration value="87"/>
+<xsd:enumeration value="91"/>
+<xsd:enumeration value="92"/>
+<xsd:enumeration value="93"/>
+<xsd:enumeration value="94"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="entry-number" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> omit unless express consignment </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:pattern value="[A-Z0-9]{3}-\d{7}-\d"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+</xsd:all>
+</xsd:complexType>
+<!--  ****************************************************************  -->
+<xsd:complexType name="otherPartiesType">
+<xsd:sequence>
+<xsd:element name="entity-type" minOccurs="1">
+<xsd:annotation>
+<xsd:documentation> required AGT = Agent CTC = Additional Contact MFR = Manufacturer / Supplier SEL = Selling Party BUY = Buying Party STP = Ship To Party CNS = Consolidator ESA = Shipper Account ECA = Consignee Account RAG = Regulated Agent </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="AGT"/>
+<xsd:enumeration value="CTC"/>
+<xsd:enumeration value="MFR"/>
+<xsd:enumeration value="SEL"/>
+<xsd:enumeration value="BUY"/>
+<xsd:enumeration value="STP"/>
+<xsd:enumeration value="CNS"/>
+<xsd:enumeration value="ESA"/>
+<xsd:enumeration value="ECA"/>
+<xsd:enumeration value="RAG"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="other-party" type="mawb:amsEntityType" minOccurs="1"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="amsEntityType">
+<xsd:all>
+<xsd:element name="name">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="35"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="address">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="35"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="city">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="17"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="state-province" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, required for US addresses </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="9"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="country" type="data:countryCodeType">
+<xsd:annotation>
+<xsd:documentation> Required </xsd:documentation>
+</xsd:annotation>
+</xsd:element>
+<xsd:element name="postal-code" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional, required for US addresses </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="17"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="phone" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="14"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="fax" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="14"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="email" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="70"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="contact-person" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> optional </xsd:documentation>
+</xsd:annotation>
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:maxLength value="70"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="party-info-list" minOccurs="0">
+<xsd:annotation>
+<xsd:documentation> Optional. Refer to Table 30: Other Party Information Type Codes in the following document for valid Identifiers: https://www.cbp.gov/document/guides/air-cargo-advance-screening-acas-implementation-guide </xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="party-info" minOccurs="1" maxOccurs="unbounded">
+<xsd:complexType>
+<xsd:all>
+<xsd:element name="identifier" minOccurs="1">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:enumeration value="TEL"/>
+<xsd:enumeration value="VTE"/>
+<xsd:enumeration value="TLX"/>
+<xsd:enumeration value="VML"/>
+<xsd:enumeration value="ISR"/>
+<xsd:enumeration value="ACT"/>
+<xsd:enumeration value="ANM"/>
+<xsd:enumeration value="ID"/>
+<xsd:enumeration value="ATY"/>
+<xsd:enumeration value="EST"/>
+<xsd:enumeration value="BLT"/>
+<xsd:enumeration value="MID"/>
+<xsd:enumeration value="KP"/>
+<xsd:enumeration value="IOR"/>
+<xsd:enumeration value="IRN"/>
+<xsd:enumeration value="IP"/>
+<xsd:enumeration value="EML"/>
+<xsd:enumeration value="FAX"/>
+<xsd:enumeration value="POC"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+<xsd:element name="value" minOccurs="1">
+<xsd:simpleType>
+<xsd:restriction base="xsd:token">
+<xsd:minLength value="1"/>
+<xsd:maxLength value="70"/>
+</xsd:restriction>
+</xsd:simpleType>
+</xsd:element>
+</xsd:all>
+</xsd:complexType>
+</xsd:element>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+</xsd:all>
+</xsd:complexType>
+</xsd:schema>

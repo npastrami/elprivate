@@ -254,6 +254,7 @@ async def get_service_projects():
     async with db_instance.pool.acquire() as connection:
         service_projects = await connection.fetch('SELECT * FROM service_projects')
         service_projects_list = [dict(record) for record in service_projects]
+        print(f'services projects:{service_projects_list}')
         return jsonify({'service_projects': service_projects_list})
 
 @app.route('/api/get_admins', methods=['GET'])
@@ -261,11 +262,12 @@ async def get_service_projects():
 @role_required('admin')  # Only allow admins to fetch the user list
 async def get_admins():
     async with db_instance.pool.acquire() as connection:
-        users = await connection.fetch('''
+        admin = await connection.fetch('''
             SELECT user_id FROM user_roles WHERE user_id LIKE 'X%'
         ''')
-        users_list = [dict(record) for record in users]
-        return jsonify({'admins': users_list})
+        admin_list = [dict(record) for record in admin]
+        print(admin_list)
+        return jsonify({'admins': admin_list})
    
 @app.route('/api/update_service_project', methods=['POST'])
 @verify_token
@@ -275,6 +277,7 @@ async def update_service_project():
     service_id = data.get('service_id')
     status = data.get('status')
     assigned_admin_id = data.get('assigned_admin_id')
+    print("service id:", service_id, "status:", status, "assigned_admin_id:", assigned_admin_id)
 
     async with db_instance.pool.acquire() as connection:
         await connection.execute('''
