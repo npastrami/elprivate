@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
-  Grid, Card, Typography, IconButton, Box, Autocomplete, TextField, Paper, Tooltip
+  Typography, TextField, Button, Autocomplete
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { makeStyles } from '@mui/styles';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'; // Changed import
 import AuthService from '../../../../services/auth.service';
 
 type ServiceProject = {
@@ -16,7 +13,7 @@ type ServiceProject = {
   service_type: string;
   form_type: string;
   institution_name: string;
-  documents_required: any; // JSONB field containing form types and institution names
+  documents_required: any;
   notes: string;
   hours_worked: number;
   status: string;
@@ -24,26 +21,62 @@ type ServiceProject = {
 };
 
 type Admin = {
-  id: string;
+  user_id: string;
   name: string;
 };
 
-// const statuses = ['Backlog', 'Ready', 'In-Progress', 'Review', 'Done'];
-
-const headerStyles: { [key: string]: string } = {
-  Ready: '#1976d2', // Blue
-  InProgress: '#ff9800', // Orange
-  Review: '#f44336', // Red
-  Done: '#4caf50', // Green
-};
+const useStyles = makeStyles({
+  boardContainer: {
+    display: 'flex',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    padding: '16px',
+    backgroundColor: '#F5F5F5',
+  },
+  column: {
+    minWidth: '300px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '8px',
+    marginRight: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  columnHeader: {
+    padding: '16px',
+    borderBottom: '1px solid #E0E0E0',
+    fontWeight: 'bold',
+    fontSize: '16px',
+    color: '#424242',
+  },
+  card: {
+    margin: '8px 16px',
+    padding: '16px',
+    borderRadius: '8px',
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+    cursor: 'pointer',
+    position: 'relative',
+    '&:hover': {
+      boxShadow: '0 4px 6px rgba(0,0,0,0.16)',
+    },
+  },
+  cardContent: {
+    marginBottom: '8px',
+  },
+});
 
 const AdminSchedule: React.FC = () => {
-  const [columns, setColumns] = useState<{ [key: string]: ServiceProject[] }>({});
+  const classes = useStyles();
+  const [columns, setColumns] = useState<{ [key: string]: ServiceProject[] }>({
+    Backlog: [],
+    Ready: [],
+    InProgress: [],
+    Review: [],
+    Done: [],
+  });
   const [admins, setAdmins] = useState<Admin[]>([]);
-  const [showBacklog, setShowBacklog] = useState(false);
-  const [editable, setEditable] = useState<{ [key: string]: boolean }>({});
+  const [editableCardId, setEditableCardId] = useState<string | null>(null);
 
-  // Fetch service projects and initialize columns
   const fetchServiceProjects = useCallback(async () => {
     try {
       const response = await axios.get('http://127.0.0.1:8080/api/get_service_projects', {
@@ -53,22 +86,27 @@ const AdminSchedule: React.FC = () => {
       });
       if (response.data.service_projects) {
         const projects = response.data.service_projects;
-        console.log(response.data.service_projects)
+        console.log(projects);
         const newColumns: { [key: string]: ServiceProject[] } = {
+          Backlog: [],
           Ready: [],
           InProgress: [],
           Review: [],
           Done: [],
         };
-  
-        // Ensure we are correctly organizing the projects by their status
+
+        const knownStatuses = ['Backlog', 'Ready', 'InProgress', 'Review', 'Done']; // Known statuses
+
         projects.forEach((project: ServiceProject) => {
-          if (project.status && newColumns[project.status]) {
-            newColumns[project.status].push(project);
+          const statusKey = project.status || 'Backlog'; // Default to 'Backlog' if no status
+          if (knownStatuses.includes(statusKey)) {
+            newColumns[statusKey].push(project);
+          } else {
+            console.warn(`Unknown status: ${project.status}`);
           }
         });
-  
-        // Set columns to reflect the updated organization
+
+
         setColumns(newColumns);
       }
     } catch (error) {
@@ -76,7 +114,6 @@ const AdminSchedule: React.FC = () => {
     }
   }, []);
 
-  // Fetch list of admins (users whose ID starts with 'X') for assignment
   const fetchAdmins = async () => {
     try {
       const response = await axios.get('http://127.0.0.1:8080/api/get_admins', {
@@ -85,19 +122,20 @@ const AdminSchedule: React.FC = () => {
         },
       });
   
-      // Ensure response data has admins and check its structure
-      const admins = response?.data?.admins;
-      console.log(admins)
-      if (admins && Array.isArray(admins)) {
-        const filteredAdmins = admins.filter((admin: Admin) => admin.id && admin.id.startsWith('X'));
-        setAdmins(filteredAdmins);
-      } else {
-        console.error('Error: Admin data is not in the expected format', response?.data);
-      }
+      const admins = response?.data?.admins || [];
+      console.log('Admin response:', admins); // Log to verify the structure
+  
+      // Map the response to ensure that `user_id` is used correctly
+      const mappedAdmins = admins.map((admin: { user_id: string }) => ({
+        user_id: admin.user_id, // Keep user_id as is
+      }));
+  
+      setAdmins(mappedAdmins); // Set mapped admins to state
     } catch (error) {
       console.error('Error fetching admins:', error);
     }
   };
+  
 
   useEffect(() => {
     fetchServiceProjects();
@@ -106,43 +144,57 @@ const AdminSchedule: React.FC = () => {
 
   const updateServiceProject = async (service_id: string, updates: any) => {
     try {
+      setColumns((prevColumns) => {
+        const newColumns = { ...prevColumns };
+        for (const status in newColumns) {
+          newColumns[status] = newColumns[status].map((project) =>
+            project.service_id === service_id ? { ...project, ...updates } : project
+          );
+        }
+        return newColumns;
+      });
+
+      // Ensure service_id is included in the payload
+      const payload = { service_id, ...updates };
+
       await axios.post(
         'http://127.0.0.1:8080/api/update_service_project',
-        updates,
+        payload,
         { headers: { 'x-access-token': AuthService.getCurrentUser()?.accessToken } }
       );
-      fetchServiceProjects(); // Re-fetch to reflect changes
+
     } catch (error) {
       console.error('Error updating service project:', error);
     }
   };
 
-  const handleEditClick = (service_id: string) => {
-    setEditable((prevEditable) => ({
-      ...prevEditable,
-      [service_id]: !prevEditable[service_id],
-    }));
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination) return;
+
+    const sourceColumnId = source.droppableId;
+    const destColumnId = destination.droppableId;
+
+    const sourceItems = Array.from(columns[sourceColumnId]);
+    const destItems = Array.from(columns[destColumnId]);
+
+    const [movedItem] = sourceItems.splice(source.index, 1);
+    movedItem.status = destColumnId;
+
+    destItems.splice(destination.index, 0, movedItem);
+
+    setColumns({
+      ...columns,
+      [sourceColumnId]: sourceItems,
+      [destColumnId]: destItems,
+    });
+
+    updateServiceProject(movedItem.service_id, { status: destColumnId });
   };
 
-  const handleSaveClick = async (service_id: string, notes: string, assignedAdmin: string | null) => {
-    if (window.confirm('Confirm save of edits to database?')) {
-      const updates = {
-        service_id,
-        notes: notes || '', // Ensure notes is not null
-        assigned_admin_id: assignedAdmin || '' // Ensure assigned_admin_id is not null
-      };
-      await updateServiceProject(service_id, updates);
-    }
-    setEditable((prevEditable) => ({
-      ...prevEditable,
-      [service_id]: false,
-    }));
-  };
-
-  // Parse form types and institution names from the JSONB field
   const parseDocuments = (documents: any): string => {
-    const documentList: string[] = []; // Explicitly define documentList as a string array
-  
+    const documentList: string[] = [];
+
     if (documents) {
       Object.keys(documents).forEach((key) => {
         if (Array.isArray(documents[key]) && documents[key].length > 0) {
@@ -154,121 +206,169 @@ const AdminSchedule: React.FC = () => {
         }
       });
     }
-  
-    return documentList.join(', '); // Return the formatted document list as a single string
-  };
 
-  // Drag and drop logic
-  const handleDrop = (service_id: string, newStatus: string) => {
-    updateServiceProject(service_id, { service_id, status: newStatus });
-  };
-
-  const DraggableCard: React.FC<{ project: ServiceProject }> = ({ project }) => {
-    console.log('Rendering project:', project); // Log project data
-    const [notes, setNotes] = useState<string>(project.notes);
-    const [assignedAdmin, setAssignedAdmin] = useState<string | null>(project.assigned_admin_id);
-    const isEditable = editable[project.service_id] || false;
-    const documentsList = parseDocuments(project.documents_required);
-
-    const [, drag] = useDrag({
-      type: 'CARD',
-      item: { service_id: project.service_id },
-    });
-
-    return (
-      <Card ref={drag} sx={{ p: 2, mb: 2, width: '300px', height: '300px', position: 'relative' }}>
-        <Typography><strong>Service Type:</strong> {project.service_type}</Typography>
-        <Typography><strong>Form Types:</strong> {documentsList}</Typography>
-        <Typography><strong>Institution:</strong> {project.institution_name}</Typography>
-
-        {/* Editable Notes Input */}
-        <TextField
-          label="Notes"
-          multiline
-          maxRows={4}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          variant="outlined"
-          sx={{ width: '100%' }}
-          disabled={!isEditable}
-        />
-
-        {/* Editable Admin Assignment */}
-        <Autocomplete
-          options={admins}
-          getOptionLabel={(option: Admin) => option.name}
-          value={admins.find(admin => admin.id === assignedAdmin) || null}
-          onChange={(e, newValue) => setAssignedAdmin(newValue?.id || null)}
-          renderInput={(params) => <TextField {...params} label="Assign Admin" variant="outlined" disabled={!isEditable} />}
-        />
-
-        {/* Edit and Save Button */}
-        <Tooltip title={isEditable ? "Save Changes" : "Edit"}>
-          <IconButton
-            onClick={() => isEditable ? handleSaveClick(project.service_id, notes, assignedAdmin) : handleEditClick(project.service_id)}
-            sx={{ position: 'absolute', top: '10px', right: '10px', color: isEditable ? 'blue' : 'gray' }}
-          >
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-      </Card>
-    );
-  };
-
-  const DroppableColumn: React.FC<{ status: string, children: React.ReactNode }> = ({ status, children }) => {
-    const [, drop] = useDrop({
-      accept: 'CARD',
-      drop: (item: { service_id: string }) => handleDrop(item.service_id, status),
-    });
-
-    return (
-      <Grid item sx={{ minWidth: '280px', maxWidth: '400px' }}>
-        <Paper ref={drop} sx={{ p: 2, border: `3px solid ${headerStyles[status]}`, height: '100%' }}>
-          <Typography variant="h6" sx={{ color: headerStyles[status], mb: 2 }}>{status}</Typography>
-          {children}
-        </Paper>
-      </Grid>
-    );
+    return documentList.join(', ');
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <Box sx={{ width: '1200px', height: '700px', overflow: 'auto', p: 2 }}>
-        {/* Add Icon for Backlog */}
-        <IconButton onClick={() => setShowBacklog(!showBacklog)}>
-          {showBacklog ? <CloseIcon /> : <AddIcon />}
-        </IconButton>
-
-        {/* Backlog Column */}
-        {showBacklog && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="h6">Backlog</Typography>
-            <Grid container spacing={2}>
-              {columns['Backlog']?.map((project) => (
-                <Grid item key={project.service_id} xs={12}>
-                  <DraggableCard project={project} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        )}
-
-        {/* Main Board */}
-        <Grid container spacing={10}>
-          {['Ready', 'InProgress', 'Review', 'Done'].map((status) => (
-            <DroppableColumn key={status} status={status}>
-              <Grid container spacing={2}>
-                {columns[status]?.map((project) => (
-                  <Grid item key={project.service_id} xs={12}>
-                    <DraggableCard project={project} />
-                  </Grid>
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className={classes.boardContainer}>
+        {['Backlog', 'Ready', 'InProgress', 'Review', 'Done'].map((status) => (
+          <Droppable droppableId={status} key={status}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={classes.column}
+              >
+                <div className={classes.columnHeader}>{status}</div>
+                {columns[status]?.map((project, index) => (
+                  <Draggable key={project.service_id} draggableId={project.service_id} index={index}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <DraggableCard
+                          project={project}
+                          admins={admins}
+                          editableCardId={editableCardId}
+                          setEditableCardId={setEditableCardId}
+                          updateServiceProject={updateServiceProject}
+                          parseDocuments={parseDocuments}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
                 ))}
-              </Grid>
-            </DroppableColumn>
-          ))}
-        </Grid>
-      </Box>
-    </DndProvider>
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </div>
+    </DragDropContext>
+  );
+};
+
+type DraggableCardProps = {
+  project: ServiceProject;
+  admins: Admin[];
+  editableCardId: string | null;
+  setEditableCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  updateServiceProject: (service_id: string, updates: any) => void;
+  parseDocuments: (documents: any) => string;
+};
+
+const DraggableCard: React.FC<DraggableCardProps> = ({
+  project,
+  admins,
+  editableCardId,
+  setEditableCardId,
+  updateServiceProject,
+  parseDocuments,
+}) => {
+  const classes = useStyles();
+  const [projectData, setProjectData] = useState<ServiceProject>(project);
+  const isEditable = editableCardId === project.service_id;
+
+  const handleFieldChange = (field: keyof ServiceProject, value: any) => {
+    setProjectData({ ...projectData, [field]: value });
+  };
+
+  const handleBlur = async () => {
+    setEditableCardId(null);
+    await updateServiceProject(project.service_id, projectData);
+  };
+
+  const handleCardClick = () => {
+    if (!isEditable) {
+      setEditableCardId(project.service_id);
+    }
+  };
+
+  const documentsList = parseDocuments(projectData.documents_required);
+
+  return (
+    <div className={classes.card} onClick={handleCardClick}>
+      {isEditable ? (
+        <>
+          <TextField
+            label="Service Type"
+            value={projectData.service_type}
+            onChange={(e) => handleFieldChange('service_type', e.target.value)}
+            variant="standard"
+            fullWidth
+            className={classes.cardContent}
+          />
+          <TextField
+            label="Form Types"
+            value={documentsList}
+            variant="standard"
+            fullWidth
+            className={classes.cardContent}
+            disabled
+          />
+          <TextField
+            label="Institution"
+            value={projectData.institution_name}
+            onChange={(e) => handleFieldChange('institution_name', e.target.value)}
+            variant="standard"
+            fullWidth
+            className={classes.cardContent}
+          />
+          <TextField
+            label="Notes"
+            multiline
+            maxRows={4}
+            value={projectData.notes}
+            onChange={(e) => handleFieldChange('notes', e.target.value)}
+            variant="standard"
+            fullWidth
+            className={classes.cardContent}
+          />
+          <Autocomplete
+            options={admins}
+            getOptionLabel={(option: Admin) => option.user_id}
+            value={admins.find((admin) => admin.user_id === projectData.assigned_admin_id) || null}
+            onChange={(e, newValue) => handleFieldChange('assigned_admin_id', newValue?.user_id || null)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Assign Admin"
+                variant="standard"
+                className={classes.cardContent}
+              />
+            )}
+          />
+          <Button variant="contained" color="primary" onClick={handleBlur}>
+            Save
+          </Button>
+        </>
+      ) : (
+        <>
+          <Typography className={classes.cardContent}>
+            <strong>Service Type:</strong> {projectData.service_type}
+          </Typography>
+          <Typography className={classes.cardContent}>
+            <strong>Form Types:</strong> {documentsList}
+          </Typography>
+          <Typography className={classes.cardContent}>
+            <strong>Institution:</strong> {projectData.institution_name}
+          </Typography>
+          <Typography className={classes.cardContent}>
+            <strong>Notes:</strong> {projectData.notes}
+          </Typography>
+          {projectData.assigned_admin_id && (
+            <Typography className={classes.cardContent}>
+              <strong>Assigned Admin:</strong>{' '}
+              {admins.find((admin) => admin.user_id === projectData.assigned_admin_id)?.user_id || ''}
+            </Typography>
+          )}
+        </>
+      )}
+    </div>
   );
 };
 
