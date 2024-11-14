@@ -34,7 +34,7 @@ from accounts.routes.user_routes import user_routes
 from accounts.controllers.user_controller import user_controller
 from accounts.controllers.auth_controller import auth_controller
 import json
-from dap.netchb.netchb_ams_xml_builder import NetchbAMSBuilder
+from dap.netchb.entry_xml_builder import EntryXMLBuilder
 from accounts.middleware.auth_jwt import verify_token, role_required
 
 app = Quart(__name__)
@@ -287,127 +287,286 @@ async def update_service_project():
         ''', status, assigned_admin_id, service_id)
     return jsonify({'message': 'Service project updated successfully'})
 
+def prune_empty_elements(element):
+    """
+    Recursively remove elements that have no text content and no non-empty child elements.
+    :param element: The root element to start pruning from.
+    :return: True if the element should be removed, False otherwise.
+    """
+    # Flag to track if we need to remove this element
+    should_remove = True
+
+    # Check each child element recursively
+    for child in list(element):
+        # Recursively prune child; if it should not be removed, mark that this element should be kept
+        if prune_empty_elements(child):
+            element.remove(child)
+        else:
+            should_remove = False  # Keep this element if at least one child is non-empty
+
+    # If the element has text content or attributes, mark it to be kept
+    if element.text and element.text.strip():
+        should_remove = False
+    elif element.attrib:  # Keep if there are attributes (assumes attributes contain meaningful data)
+        should_remove = False
+
+    # Return True if the element should be removed (i.e., it's empty and has no non-empty children)
+    return should_remove
+
+        
 @app.route('/api/generate_final_docs', methods=['POST'])
 async def generate_final_docs():
-    data = await request.get_json()
-    client_id = data.get('client_id')
-    doc_names = data.get('doc_names', [])
-    send_to_catcher = data.get('send_to_catcher', False)
-    print(f"list of doc_name to print: {doc_names}")
-    
-    print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
-    catcher = Catcher('approved-docs')
-    db = DapDatabase(client_id, None)
+    try:
+        data = await request.get_json()
+        client_id = data.get('client_id')
+        doc_names = data.get('doc_names', [])
+        send_to_catcher = data.get('send_to_catcher', False)
 
-    final_urls = []
-    approved_docs = await db.get_documents_for_review(client_id)
+        # if not client_id or not doc_names:
+        #     return jsonify({"error": "client_id and doc_names are required."}), 400
 
-    for doc_name in doc_names:
-        matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
-        
-        if matching_docs:
-            field_data = {
-                doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
-                for doc in matching_docs
-            }
+        print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
+
+        # Use mawb_data directly for testing
+        mawb_data = {
+            # Entry Number Section
+            "entry-no": "98397699",
+            "filer-code": "ABC",
+            "check-sum": "1",
             
-            if send_to_catcher:
-                print("sending to catcher")
-                final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
-                print(f"final_url for {doc_name}: {final_url}")
-                final_urls.append(final_url)
-            else:
-                # Save to approved_docs database without uploading to Catcher
-                final_url = None
-                print("skipping the catcher")
-                last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
-                print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
-                final_urls.append(f"Saved to database with ID: {last_inserted_id}")
-                
-            # Trigger the XML generation and submission for AMS MAWB
-            mawb_data = {
-                "mawb_prefix": "001",  # Example data, replace with actual values
-                "mawb_number": "12345678",
-                "origin_airport": "JFK",
-                "arrival_airport": "LAX",
-                "hawbs": [
-                    {
-                        "hawb_number": "HAWB001",
-                        "commercial_description": "Electronics",
-                        "shipper": {
-                            "name": "Shipper Name",
-                            "address": "123 Shipper St",
-                            "city": "Shipper City",
-                            "country": "US"
-                        },
-                        "consignee": {
-                            "name": "Consignee Name",
-                            "address": "456 Consignee Ave",
-                            "city": "Consignee City",
-                            "country": "US"
-                        },
-                        "piece_count": 10,
-                        "weight": 100.0,
-                        "weight_unit": "K",
+            # Header Elements
+            "importer-tax-id": "12-1234567AB",
+            "tax-id": "100-20-3000",  # Ultimate consignee tax ID
+            "cf-4811": "12-3456789",  # Required tax ID format
+            "processing-port": "8888",
+            "consignee-name": "Nicholas Pastrana",
+            "mode-transportation": "10",
+            "entry-port": "8888",
+            "entry-type": "01",
+            "entry-date": "2024-11-09",
+            "payment-type": "2",
+            "statement-date": "2024-11-09",
+            "charges": "100",
+            "gross-weight": "200",
+            "description": "COMMERCIAL MERCHANDISE",
+
+            # Remote Entry Information
+            "preparer-port": "8888",
+            "preparer-office-code": "99",
+            "remote-exam-port": "8888",
+            
+            # Required Header Elements
+            "bond-type": "08",
+            "surety-code": "123",
+            "state-destination": "CA",
+            "carrier-code": "ABCD",
+            "location-of-goods": "C213",
+            "paperless-summary-certification": None,  # Fixed typo in element name
+            "certify-cargo-release-via-ace": None,
+            
+            # Missing Docs Code
+            "code": "10",  # Valid code from enumeration
+            
+            # Required dates
+            "tariff-calculation-date": "2024-11-09",
+            "import-date": "2024-11-09",
+            "arrival-date": "2024-11-09",
+            # "inbond-date": "2024-11-09",
+            
+            # Required ports
+            "unlading-port": "8888",
+            
+            # Manifest Information
+            "total-manifest-quantity": "100",
+            "master-scac": "ABCD",
+            "master-bill": "123456789012",
+            "house-scac": "ABCD",
+            "house-bill": "987654321021",
+            "quantity": "100",
+            "unit": "PCS",
+            
+            # Bill of Lading
+            "master-scac": "ABCD",
+            "master-bill": "123456789012",
+            "house-scac": "ABCD",
+            "house-bill": "987654321021",
+            "quantity": "100",
+            "unit": "PCS",
+            
+            "ace_entities": [{
+                "entity-code": "BY",
+                "entity-name": "BUYER NAME",
+                "entity-information": {
+                    "entity-address": {
+                        "address-components": [{
+                            "component-type": "01",
+                            "address-information": "567"
+                        }, {
+                            "component-type": "02",
+                            "address-information": "23rd st"
+                        }],
+                        "city": "NEW YORK",
+                        "state-province-code": "NY",
+                        "postal-code": "10001",
+                        "country": "US"
                     }
-                ]
-            }
+                }
+            }],
 
-            # Create an instance of NetchbAMSBuilder and build the XML
-            ams_builder = NetchbAMSBuilder(client_id, mawb_data)
-            xml_str = await ams_builder.build_xml()
             
-            # Push the XML to the sandbox API and print the response
-            response = await ams_builder.push_to_netchb(xml_str)
-            print(f"Response from sandbox API for {doc_name}: {response}")
+            # Invoice Information (for invoices/invoice)
+            "invoice-no": "12345",
+            "aii-supplier-id": "SUPPLIER123",
+            "ultimate-consignee-tax-id": "123-45-7894",
+            "related-party": "N",  # Empty tag in sample
+            "currency-code": "USA",
+            "country-origin": "CN",
+            
+            
+            # # Warehouse Entry
+            # "warehouse-filer-code": "ABC",
+            # "warehouse-entry-no": "1234567",
+            # "warehouse-port": "8888",
 
-    await db.close()
+            # Other Required Elements
+            "other-recon": "1",
+            "bond-amount": "50000",
+            "consolidated-informal-indicator": "P",
+            "bond-waiver-reason": "995",
+            "entry-date-election-code": "P",
+            "presentation-date": "2024-11-09",
+            
+            # Fee information
+            "informal-fee": "0.00",
+            "mail-fee": "0.00",
+            "manual-surcharge": "0.00",
+            
+            # CVD information
+            "add-cvd-bond-type": "08",
+            "add-cvd-stb-amount": "0",
+            
+            # Boolean flags (as empty elements in XML)
+            "electronic-invoice": None,
+            "live-entry": None,
+            "precalculated": None,
+            "transmit": None,
+            "via-ace": None,
+            
+            # Consolidated Entry Information
+            "consolidated-entry-no": "99113123",  # Required for consolidated-entry
+            "consolidated-entry-filer-code": "ABC",
+            # Invoice Information
+            "invoice-no": "12345",
+            "aii-supplier-id": "SUPPLIER123",
+            "ultimate-consignee-tax-id": "123-45-7894",
+            "related-party": None,  # Empty element in sample
+            
+            # Line Item Required Fields
+            "export-date": "2024-11-09",
+            "country-origin": "CN",
+            "manufacturer-id": "CNMANUFACTURER",
+            "country-export": "CN",  # Required for ocean/air
+            "lading-port": "12345",  # Required for ocean
+            "gross-weight": "200",
+            
+            # Tariff Information
+            "tariff": [{
+                "tariff-no": "1234567890",
+                "value": "20",
+                "quantity1": "10.51",
+                "unit-of-measure1": "KG",
+                "special-program": "A",
+                "duty": "2.25"
+            },
+            {
+                "tariff-no": "987654321",
+                "value": "30",
+                "duty": "3.50",
+                "quantity1": "1000000000",
+                "unit-of-measure1": "M",
+                "quantity2": "50",
+                "unit-of-measure2": "CM"
+            }],
+            
+            # Fees Information
+            "fees": [{
+                "class-code": "056",
+                "tariff-no": "1234567890",
+                "amount": "100.45"
+            }],
+            
+            # Previous entries remain same...
+            
+            # Party Information
+            "delivered-to": "DELIVERED",
+            "sold-to": "SOME SELLER", 
+            "exporter": "SOME MFG", 
+        }
 
-    return jsonify({"final_docs": final_urls})    
-# @app.route('/api/generate_final_docs', methods=['POST'])
-# async def generate_final_docs():
-#     data = await request.get_json()
-#     client_id = data.get('client_id')
-#     doc_names = data.get('doc_names', [])
-#     send_to_catcher = data.get('send_to_catcher', False)
-#     print(f"list of doc_name to print: {doc_names}")
-    
-#     print(f"Generating final docs for client_id: {client_id}, document: {doc_names}")
-#     catcher = Catcher('approved-docs')
-#     db = DapDatabase(client_id, None)
-
-#     final_urls = []
-
-#     approved_docs = await db.get_documents_for_review(client_id)
-
-#     for doc_name in doc_names:
-#         matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
+        # Create an instance of EntryXMLBuilder and build the XML
+        mapping_file = "NetCHB_Mapping.xlsx"  # Ensure this path is correct
+        ams_builder = EntryXMLBuilder(client_id, mawb_data, mapping_file, root_tag="entry", namespaces={'entry': 'http://www.netchb.com/xml/entry'})
         
-#         if matching_docs:
-#             field_data = {
-#                 doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
-#                 for doc in matching_docs
-#             }
-            
-#             if send_to_catcher:
-#                 print("sending to catcher")
-#                 final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
-#                 print(f"final_url for {doc_name}: {final_url}")
-#                 final_urls.append(final_url)
-#             else:
-#                 # Save to approved_docs database without uploading to Catcher
-#                 final_url = None
-#                 print("skipping the catcher")
-#                 last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
-#                 print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
-#                 final_urls.append(f"Saved to database with ID: {last_inserted_id}")
-#         else:
-#             print(f"No matching documents found for {doc_name}.")
+        try:
+            xml_tree = ams_builder.build_xml_from_mapping()
+            prune_empty_elements(xml_tree.root)  # Prune empty elements from the tree
+            xml_str = xml_tree.to_string()
 
-#     await db.close()
+            print(f"Generated XML for test:\n{xml_tree.to_pretty_string()}")
+        except Exception as e:
+            error_message = f"Error during XML generation: {e}"
+            print(error_message)
+            return jsonify({"error": error_message}), 500
 
-#     return jsonify({"final_docs": final_urls})
+        # Optionally push the XML to sandbox API
+        try:
+            response = await ams_builder.push_to_netchb(xml_str)
+            print(f"Response from sandbox API: {response}")
+        except Exception as e:
+            error_message = f"Error during XML submission to NetChb API: {e}"
+            print(error_message)
+            return jsonify({"error": error_message}), 500
 
+        return jsonify({"message": "XML generated and submitted successfully"})
+
+    except Exception as e:
+        error_message = f"Error in generate_final_docs: {e}"
+        print(error_message)
+        return jsonify({"error": error_message}), 500
+
+
+
+# catcher = Catcher('approved-docs')
+#         db = DapDatabase(client_id, None)
+#         final_urls = []
+
+#         approved_docs = await db.get_documents_for_review(client_id)
+#         if not approved_docs:
+#             return jsonify({"error": "No approved documents found for this client."}), 404
+
+#         for doc_name in doc_names:
+#             matching_docs = [doc for doc in approved_docs if doc['doc_name'] == doc_name]
+
+#             if matching_docs:
+#                 field_data = {
+#                     doc['field_name']: {'value': doc['field_value'], 'confidence': doc['confidence']}
+#                     for doc in matching_docs
+#                 }
+
+#                 if send_to_catcher:
+#                     print("Sending to catcher")
+#                     final_url = await catcher.upload_final_document(client_id, doc_name, field_data)
+#                     print(f"Final URL for {doc_name}: {final_url}")
+#                     final_urls.append(final_url)
+#                 else:
+#                     # Save to approved_docs database without uploading to Catcher
+#                     print("Skipping the catcher")
+#                     final_url = None
+#                     last_inserted_id = await db.save_approved_document(client_id, doc_name, final_url, field_data)
+#                     print(f"Document {doc_name} saved to approved_docs with ID: {last_inserted_id}")
+#                     final_urls.append(f"Saved to database with ID: {last_inserted_id}")
+                    
+                    
 @app.route('/api/download_csv/<document_id>', methods=['GET', 'POST'])
 async def download_csv(document_id):
     print("Entered download_csv function")
