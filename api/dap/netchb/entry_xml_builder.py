@@ -63,6 +63,7 @@ class EntryXMLBuilder:
                 child_element = ET.SubElement(entry_no_element, f"{{{self.namespaces['entry']}}}user-specified")
                 self._populate_children(child_element, "user-specified", level + 1)
                 created_elements.add(element_name)
+                # ET.SubElement(entry_no_element, f"{{{self.namespaces['entry']}}}system-generated")
                 continue
 
             # Create the element

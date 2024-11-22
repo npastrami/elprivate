@@ -20,7 +20,7 @@ type DocumentState = {
     taxForms: Document[];
 };
 
-const customsForms = ["Airway Bill", "House Airway Bill", "Bill of Lading"];
+const customsForms = ["Airway Bill", "House Airway Bill", "Bill of Lading", "Flower Invoice"];
 const taxForms = [
     "1099-MISC", "1099-INT", "1099-DIV", "1099-R", "1099-G", "1099-S", 
     "1099-B", "1099-K", "1099-C", "1099-A", "1098", "1098-E", "1098-T", "W-2"
@@ -168,8 +168,8 @@ const ClientSetup: React.FC = () => {
                     >
                         <option value=""></option>
                         <option value="Customs">Customs</option>
-                        <option value="Tax">Tax</option>
-                        <option value="Book Keeping">Bookkeeping</option>
+                        {/* <option value="Tax">Tax</option>
+                        <option value="Book Keeping">Bookkeeping</option> */}
                     </TextField>
     
                     <TextField
