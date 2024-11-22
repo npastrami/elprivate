@@ -40,7 +40,7 @@ export const FileList: FC<FileListProps> = ({ files, onRemove }) => {
   if (files.length === 0) return null;
 
   // as const is used to make TypeScript treat formTypes as a readonly tuple, not a regular array.
-  const formTypes = ["None", "W2", "Customs"] as const;
+  const formTypes = ["None", "W2", "FlowerInvoice", "MAWB", "HAWB"] as const;
 
   // typeof formTypes[number] then creates a union type of the values in formTypes, which is equivalent to the original FormType type.
   // This allows us to use the formTypes array to define the type of a variable, but also use the type of the values in the array elsewhere.

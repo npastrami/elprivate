@@ -14,9 +14,7 @@ class Sorter:
         file_bytes = io.BytesIO(file_stream.read())
         file_bytes.seek(0)
 
-        # Use the asynchronous client with async with for proper context management
         async with DocumentIntelligenceClient(self.endpoint, AzureKeyCredential(self.key)) as document_intelligence_client:
-            # Start the document analysis and await its completion
             poller = await document_intelligence_client.begin_analyze_document(
                 "prebuilt-read",
                 analyze_request=file_bytes,
@@ -25,18 +23,25 @@ class Sorter:
             result: AnalyzeResult = await poller.result()
 
         form_type = 'None'
+        best_match_percentage = 0
+        best_match_count = 0
+
         for page in result.pages:
             for word in page.words:
                 print(f"Word '{word.content}' has a confidence of {word.confidence}")
 
-            # Determine form type based on keywords
             doc_text = " ".join([line.content for line in page.lines])
+            
             for form, keywords in sorter_form_mapping.items():
-                if any(keyword in doc_text for keyword in keywords):
+                matches = sum(1 for keyword in keywords if keyword in doc_text)
+                match_percentage = (matches / len(keywords)) * 100
+                
+                print(f"Form: {form}, Matches: {matches}/{len(keywords)} ({match_percentage:.1f}%)")
+                
+                if match_percentage > best_match_percentage or \
+                   (match_percentage == best_match_percentage and matches > best_match_count):
                     form_type = form
-                    print(f"Match found: {form}")
-                    break
-            if form_type != 'None':
-                break  # Break if a form type is found
+                    best_match_percentage = match_percentage
+                    best_match_count = matches
 
         return {'form_type': form_type}

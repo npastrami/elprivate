@@ -1,0 +1,85 @@
+<xsd:schema
+     targetNamespace="http://www.netchb.com/xml/cmq"
+     xmlns:cmq="http://www.netchb.com/xml/cmq"
+	 xmlns:data="http://www.netchb.com/xml/data"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+     elementFormDefault="qualified"
+     attributeFormDefault="unqualified">
+	<xsd:annotation>
+		<xsd:documentation>
+			This is the XML Schema for the cargo manifest query XML document that will be used
+			to validate a cargo manifest query to NetChb using the CMQ web service
+		</xsd:documentation>
+	</xsd:annotation>
+	<xsd:import namespace="http://www.netchb.com/xml/data" schemaLocation="https://www.netchb.com/xml/data/data_type.xsd" />
+	
+	<!-- **************************************************************** -->
+	<xsd:element name="queries">
+		<xsd:annotation>
+			<xsd:documentation>
+				queries is the root element of the document.
+			</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="query" minOccurs="1" maxOccurs="unbounded">
+					<xsd:complexType>
+						<xsd:choice>
+							<xsd:element name="entry-number">
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="filer-code" type="data:filerCodeType" />
+										<xsd:element name="entry-no" type="data:entryNoType" />
+										<xsd:element name="check-sum">
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:integer">
+													<xsd:minInclusive value="0" />
+													<xsd:maxInclusive value="9" />
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="inbond-number" type="data:inbondNoType"/>
+							<xsd:element name="master-bill">
+								<xsd:complexType>
+									<xsd:all>
+										<xsd:element name="scac" type="data:carrierCodeType"/>
+										<xsd:element name="bill-number">
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:token">
+													<xsd:maxLength value="12"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+									</xsd:all>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="air-waybill">
+								<xsd:complexType>
+									<xsd:all>
+										<xsd:element name="master-air-waybill">
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:token">
+													<xsd:maxLength value="11"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+										<xsd:element name="house-air-waybill" minOccurs="0">
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:token">
+													<xsd:maxLength value="12"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+									</xsd:all>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:choice>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>
