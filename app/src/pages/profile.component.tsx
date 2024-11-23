@@ -115,10 +115,10 @@ export default class Profile extends Component<Props, State> {
         return (
           <JobProvider>
             <YStack space="$4">
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
+              <Card padding="$4"  backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
                 <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </Card>
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{marginTop: '-48px'}}>
                 <FileUpload />
               </Card>
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="20px">
@@ -135,7 +135,7 @@ export default class Profile extends Component<Props, State> {
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
                 <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </Card>
-              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+              <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4" style={{marginTop: '-48px'}}>
                 <h3>Review Workpapers</h3>
                 <ReviewWorkpapers clientId={currentUser.id} />
               </Card>
@@ -179,7 +179,7 @@ export default class Profile extends Component<Props, State> {
               <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" style={{paddingTop: '10px'}}>
                 <JobInput onEnterKeyPress={this.handleKeyPress}/>
               </Card>
-            <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4">
+            <Card padding="$4" backgroundColor="$gray7" borderRadius="$4" marginTop="$4" style={{marginTop: '-48px'}}>
               <h3>Results</h3>
               <Results clientId={currentUser.id} />
             </Card>
