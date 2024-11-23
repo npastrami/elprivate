@@ -436,7 +436,7 @@ const ReviewWorkpapers: React.FC<ReviewWorkpapersProps> = () => {
           label="Hide None Values"
           style={{ marginBottom: '8px' }}
         />
-        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '1000px', maxWidth: '1000px', maxHeight: '1000px' }}>
+        <TableContainer component={Paper} style={{ marginBottom: '16px', height: '600px', maxWidth: '1000px', maxHeight: '1000px' }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>

@@ -44,8 +44,8 @@ class App extends Component<Props, State> {
   handleLogin(user: IUser) {
     this.setState({
       currentUser: user,
-      showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
-      showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
+      // showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
+      // showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
     });
   }
   
@@ -55,8 +55,8 @@ class App extends Component<Props, State> {
     if (user) {
       this.setState({
         currentUser: user,
-        showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
-        showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
+        // showModeratorBoard: user?.roles?.includes("ROLE_MODERATOR") || false,
+        // showAdminBoard: user?.roles?.includes("ROLE_ADMIN") || false,
       });
     }
   }
@@ -72,7 +72,7 @@ class App extends Component<Props, State> {
   }
 
   render() {
-    const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+    const { currentUser } = this.state;
 
     // const particlesInit = async (main: any) => {
     //   await loadFull(main);
@@ -163,46 +163,23 @@ class App extends Component<Props, State> {
             <YStack backgroundColor="$darkGrey" padding="$3" height={80} justifyContent="center">
               <XStack justifyContent="space-between" alignItems="center">
                 <Link to="/" style={{ textDecoration: 'none' }}>
-                  <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" fontWeight="bold" >Enrique Customs</Button>
+                  <Button backgroundColor="$lightBlue" size="$3" hoverStyle={{ backgroundColor: '$blue' }} fontWeight="bold" marginLeft="20px" borderRadius="$none" >Enrique Customs</Button>
                 </Link>
-                <XStack space="$3">
-                  <Link to="/home" style={{ textDecoration: 'none' }}>
-                    <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Home</Button>
-                  </Link>
-
-                  {showModeratorBoard && (
-                    <Link to="/mod" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Moderator Board</Button>
-                    </Link>
-                  )}
-
-                  {showAdminBoard && (
-                    <Link to="/admin" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Admin Board</Button>
-                    </Link>
-                  )}
-
-                  {currentUser && (
-                    <Link to="/user" style={{ textDecoration: 'none' }}>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">User</Button>
-                    </Link>
-                  )}
-                </XStack>
                 <XStack space="$3">
                   {currentUser ? (
                     <>
                       <Link to="/profile" style={{ textDecoration: 'none' }}>
-                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">{currentUser.username}</Button>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} fontWeight="bold" marginRight="10px" size="$3" borderRadius="$none">{currentUser.username}</Button>
                       </Link>
-                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2" onPress={this.logOut}>LogOut</Button>
+                      <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} fontWeight="bold" marginRight="20px" size="$3" borderRadius="$none" onPress={this.logOut}>LogOut</Button>
                     </>
                   ) : (
                     <>
                       <Link to="/login" style={{ textDecoration: 'none' }}>
-                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Login</Button>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} size="$3" marginRight="10px" borderRadius="$none">Login</Button>
                       </Link>
                       <Link to="/signup" style={{ textDecoration: 'none' }}>
-                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} color="$color" borderRadius="$2">Sign Up</Button>
+                        <Button backgroundColor="$lightBlue" hoverStyle={{ backgroundColor: '$blue' }} size="$3" marginRight="20px" borderRadius="$none">Sign Up</Button>
                       </Link>
                     </>
                   )}

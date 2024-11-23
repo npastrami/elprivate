@@ -9,13 +9,13 @@ const tokens = createTokens({
     lightRed: '#FFCCCC',
     lightBlue: '#CCFFFF',
     red: '#ff0000',
-    blue: '#0000ff',
+    blue: '#0080FF',
     darkGrey: '#333333',
     grey: '#808080',
   },
   background: {
     red: '#ff0000',
-    blue: '#0000ff',
+    blue: '#0080FF',
     grey: '#808080',
     darkGrey: '#333333',
     lightRed: '#FFCCCC',
@@ -28,12 +28,17 @@ const tokens = createTokens({
     true: 16, // Default space
   },
   size: {
-    small: 10,
-    medium: 20,
-    large: 30,
+    1: 24,  // Small button
+    2: 32,  // Default button
+    3: 40,  // Medium button
+    4: 48,  // Large button
+    5: 56,  // XL button
+    6: 64,
+    
     true: 20, // Default size
   },
   radius: {
+    none: 0,
     small: 4,
     medium: 8,
     large: 16,
